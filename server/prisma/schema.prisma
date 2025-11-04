@@ -1,0 +1,359 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum Condicion_Cerda {
+  viva
+  desecho
+  muerta
+  sacrificada
+  aborto
+  lactando
+  gestando
+  destetada
+}
+enum Condicion_Berraco {
+  vivo
+  desecho
+  muerto
+  sacrificado
+}
+
+enum Causa_Removida {
+  desecho
+  muerte
+  sacrificio
+}
+
+enum Rol_Operario {
+  administrador
+  operario
+}
+
+enum Turno {
+  manana
+  tarde
+  noche
+}
+
+model Granja {
+  id Int @id @default(autoincrement())
+  nombre String
+  activo Boolean @default(true)
+  usuarios Usuario[]
+  razas Raza[]
+  jaulas Jaula[]
+  cerdas Cerda[]
+  cerdas_removidas Cerda_Removida[]
+  abortos Aborto[]
+  berracos Berraco[]
+  berracos_removidos Berraco_Removido[]
+  operarios Operario[]
+  montas Monta[]
+  partos Parto[]
+  parideras Paridera[]
+  partos_Operarios Parto_Operario[]
+  vacunas Vacuna[]
+  partos_Vacunas Parto_Vacuna[]
+  muertos Muertos[]
+  enfermedades Enfermedad[]
+  destetes Destete[]
+  adopciones Adopcion[]
+  donaciones Donacion[]
+}
+
+model Usuario {
+  id Int @id @default(autoincrement())
+  nombre String 
+  email String @unique
+  password String
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  activo Boolean @default(true)
+}
+
+model Raza {
+  id Int @id @default(autoincrement())
+  nombre String
+  activo Boolean @default(true)
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  cerdas Cerda[]
+  berracos Berraco[]
+}
+
+model Jaula {
+  id Int @id @default(autoincrement())
+  nombre String
+  acivo Boolean @default(true)
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  cerdas Cerda[]
+  abortos Aborto[]
+  berracos Berraco[]
+  montas Monta[]
+  partos Parto[]
+}
+
+model Cerda {
+  id Int @id @default(autoincrement())
+  nombre String
+  paridad Int
+  fecha_ingreso DateTime
+  activo Boolean @default(true)
+  condicion Condicion_Cerda @default(viva)
+  observacion String?
+  raza_id Int
+  raza Raza @relation(fields: [raza_id], references: [id])
+  jaula_id Int
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  cerda_Removida Cerda_Removida[]
+  abortos Aborto[]
+  montas Monta[]
+  partos Parto[]
+  muertos Muertos[]
+  destetes Destete[]
+  adopciones Adopcion[]
+  donaciones Donacion[]
+}
+
+model Cerda_Removida {
+  id Int @id @default(autoincrement())
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  causa Causa_Removida
+  observacion String?
+  fecha DateTime
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Aborto {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  hora DateTime @db.Time
+  observacion String?
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  jaula_id Int
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Berraco {
+  id Int @id @default(autoincrement())
+  nombre String
+  activo Boolean @default(true)
+  condicion Condicion_Berraco @default(vivo)
+  observacion String?
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  raza_id Int
+  raza Raza @relation(fields: [raza_id], references: [id])
+  jaula_id Int
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  berraco_Removido Berraco_Removido[]
+  montas Monta[]
+}
+
+model Berraco_Removido {
+  id Int @id @default(autoincrement())
+  causa Causa_Removida
+  observacion String?
+  fecha DateTime
+  berraco_id Int
+  berraco Berraco @relation(fields: [berraco_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Operario {
+  id Int @id @default(autoincrement())
+  nombre String
+  rol Rol_Operario @default(operario)
+  activo Boolean @default(true)
+  observacion String?
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  montas Monta[]
+  parto_Operarios Parto_Operario[]
+  muertos Muertos[]
+}
+
+model Monta {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  turno Turno
+  observacion String?
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  berraco_id Int
+  berraco Berraco @relation(fields: [berraco_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  jaula_id Int
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  operario_id Int
+  operario Operario @relation(fields: [operario_id], references: [id])
+}
+
+model Paridera {
+  id Int @id @default(autoincrement())
+  nombre String
+  activo Boolean @default(true)
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  partos Parto[]
+  muertos Muertos[]
+  destetes Destete[]
+  adopciones Adopcion[]
+  donaciones Donacion[]
+}
+
+model Parto {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  total Int
+  nacidos_vivos Int
+  nacidos_muertos Int
+  nacidos_momias Int
+  peso Decimal @db.Decimal(5,2)
+  turno Turno
+  duracion DateTime @db.Time
+  hora_inicio DateTime @db.Time
+  hora_fin DateTime @db.Time
+  manipulada Boolean @default(false)
+  observacion String?
+  paridera_id Int
+  paridera Paridera @relation(fields: [paridera_id], references: [id])
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  jaula_id Int
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  parto_Operarios Parto_Operario[]
+  parto_Vacunas Parto_Vacuna[]
+  muertos Muertos[]
+  destetes Destete[]
+  adopciones Adopcion[]
+  donaciones Donacion[]
+}
+
+model Parto_Operario {
+  id Int @id @default(autoincrement())
+  parto_id Int
+  parto Parto @relation(fields: [parto_id], references: [id])
+  operario_id Int
+  operario Operario @relation(fields: [operario_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Vacuna {
+  id Int @id @default(autoincrement())
+  nombre String
+  observacion String?
+  imagen String?
+  activo Boolean @default(true)
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  partos_Vacunas Parto_Vacuna[]
+}
+
+model Parto_Vacuna {
+  id Int @id @default(autoincrement())
+  parto_id Int
+  parto Parto @relation(fields: [parto_id], references: [id])
+  vacuna_id Int
+  vacuna Vacuna @relation(fields: [vacuna_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Enfermedad {
+  id Int @id @default(autoincrement())
+  nombre String
+  observacion String?
+  activo Boolean @default(true)
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  muertos Muertos[]
+}
+
+model Muertos {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  cantidad Int
+  observacion String?
+  peso Decimal @db.Decimal(5,2)
+  turno Turno
+  hora DateTime @db.Time
+  paridera_id Int
+  paridera Paridera @relation(fields: [paridera_id], references: [id])
+  operario_id Int
+  operario Operario @relation(fields: [operario_id], references: [id])
+  enfermedad_id Int
+  enfermedad Enfermedad @relation(fields: [enfermedad_id], references: [id])
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  parto_id Int?
+  parto Parto? @relation(fields: [parto_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+}
+
+model Destete {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  cantidad Int
+  peso Decimal @db.Decimal(5,2)
+  parcial Boolean @default(false)
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  parto_id Int
+  parto Parto @relation(fields: [parto_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  paridera_id Int
+  paridera Paridera @relation(fields: [paridera_id], references: [id])
+}
+
+model Adopcion {
+  id Int @id @default(autoincrement())
+  fecha DateTime
+  cantidad Int
+  peso Decimal @db.Decimal(5,2)
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  paridera_id Int
+  paridera Paridera @relation(fields: [paridera_id], references: [id])
+  parto_id Int
+  parto Parto @relation(fields: [parto_id], references: [id])
+}
+
+model Donacion {
+    id Int @id @default(autoincrement())
+  fecha DateTime
+  cantidad Int
+  peso Decimal @db.Decimal(5,2)
+  cerda_id Int
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  granja_id Int
+  granja Granja @relation(fields: [granja_id], references: [id])
+  paridera_id Int
+  paridera Paridera @relation(fields: [paridera_id], references: [id])
+  parto_id Int
+  parto Parto @relation(fields: [parto_id], references: [id])
+}
