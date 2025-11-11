@@ -1,0 +1,98 @@
+import * as service from "../services/razaService.js";
+import { Prisma } from "@prisma/client";
+
+export const createRaza = async (req, res, next) => {
+  try {
+    const { nombre, descripcion, granja_id } = req.body;
+    const raza = await service.createRaza({
+      nombre,
+      descripcion,
+      granja_id: { connect: { id: Number(granja_id) } },
+    });
+    res.json({
+      message: `Éxito al crear la raza ${raza.nombre}`,
+      raza,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listRazasActivas = async (req, res, next) => {
+  try {
+    const { granja_id } = req.params;
+    const razas = await service.listRazasActivas(Number(granja_id));
+    res.json(razas);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listRazas = async (req, res, next) => {
+  try {
+    const { granja_id } = req.params;
+    const razas = await service.listRazas(Number(granja_id));
+    res.json(razas);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const getRazaById = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const raza = await service.getRazaById(Number(id));
+    if (!raza) return res.status(404).json({ error: "Raza no encontrada." });
+    res.json(raza);
+  } catch (error) {
+    next(error);
+  }
+};
+export const updateRaza = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const { nombre, descripcion, granja_id, activo } = req.body;
+    const raza = await service.updateRaza(Number(id), {
+      nombre,
+      descripcion,
+      granja_id,
+      activo,
+    });
+    res.json({
+      message: `Éxito al actualizar la raza ${raza.nombre}`,
+      raza,
+    });
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteRaza = async (req, res, next) => {
+  try {
+    const { id } = req.params;
+    const raza = await service.deleteRaza(Number(id));
+    res.json({
+      message: `Éxito al eliminar la raza ${raza.nombre}`,
+      raza,
+    });
+  } catch (error) {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      try {
+        const razaDesactivada = await service.updateRaza(
+          Number(req.params.id),
+          { activo: false }
+        );
+        return res.status(200).json({
+          message: `La raza ${razaDesactivada.nombre} está en uso y fue desactivada en su lugar.`,
+          raza: razaDesactivada,
+        });
+      } catch (updateError) {
+        return next(updateError);
+      }
+    }
+    next(error);
+  }
+};
