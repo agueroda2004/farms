@@ -17,5 +17,5 @@ export const updateGranja = async (id, data) => {
 };
 
 export const deleteGranja = async (id) => {
-  return prisma.granja.delete({ where: { id } });
+  return prisma.granja.delete({ where: { id: id } });
 };

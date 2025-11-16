@@ -10,12 +10,20 @@ export const listUsuarios = async () => {
   return prisma.usuario.findMany();
 };
 
+export const listUsuariosByGranja = async (granja_id) => {
+  return prisma.usuario.findMany({ where: { granja_id } });
+};
+
 export const getUsuarioById = async (id) => {
   return prisma.usuario.findUnique({ where: { id } });
 };
 
 export const updateUsuario = async (id, data) => {
-  return prisma.usuario.update({ where: { id }, data });
+  const hashedPassword = await bcrypt.hash(data.password, 10);
+  return prisma.usuario.update({
+    where: { id },
+    data: { ...data, password: hashedPassword },
+  });
 };
 
 export const deleteUsuario = async (id) => {

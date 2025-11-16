@@ -4,6 +4,7 @@ import { Prisma } from "@prisma/client";
 export const createGranja = async (req, res, next) => {
   try {
     const { nombre } = req.body;
+    console.log(nombre);
     const granja = await service.createGranja({ nombre });
     res.json({
       message: `Éxito al crear la granja ${granja.nombre}`,
@@ -69,7 +70,7 @@ export const deleteGranja = async (req, res, next) => {
         return res.status(404).json({ error: "Granja no encontrada." });
       }
       if (error.code === "P2003") {
-        const updated = await service.updateGranja(Number(id), {
+        const updated = await service.updateGranja(Number(req.params.id), {
           activo: false,
         });
         return res.json({

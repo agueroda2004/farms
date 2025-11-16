@@ -1,6 +1,7 @@
 import * as service from "../services/razaService.js";
 import { Prisma } from "@prisma/client";
 
+// ! revisar todo
 export const createRaza = async (req, res, next) => {
   try {
     const { nombre, descripcion, granja_id } = req.body;
@@ -86,7 +87,7 @@ export const deleteRaza = async (req, res, next) => {
           { activo: false }
         );
         return res.status(200).json({
-          message: `La raza ${razaDesactivada.nombre} está en uso y fue desactivada en su lugar.`,
+          message: `La raza ${razaDesactivada.nombre} esta asociada a otros registros por lo que ha sido desactivada en lugar de eliminada.`,
           raza: razaDesactivada,
         });
       } catch (updateError) {

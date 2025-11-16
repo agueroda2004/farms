@@ -91,6 +91,7 @@ model Raza {
 model Jaula {
   id Int @id @default(autoincrement())
   nombre String
+  // ! cambiar esto a activo
   acivo Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
@@ -109,9 +110,10 @@ model Cerda {
   activo Boolean @default(true)
   condicion Condicion_Cerda @default(viva)
   observacion String?
+  
   raza_id Int
   raza Raza @relation(fields: [raza_id], references: [id])
-  jaula_id Int
+  jaula_id Int @unique
   jaula Jaula @relation(fields: [jaula_id], references: [id])
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])

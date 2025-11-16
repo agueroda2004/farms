@@ -20,7 +20,7 @@ export const handlePrismaError = (error, req, res, next) => {
     case "P2002":
       return res.status(409).json({
         message: `Ya existe un registro con este valor.`,
-        field: error.meta?.target?.join(", "),
+        field: error.meta?.target?.toString() || "unknown",
       });
 
     case "P2003":

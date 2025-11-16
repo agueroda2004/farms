@@ -9,7 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 export const login = async (req, res) => {
   const { email, password } = req.body;
   try {
-    const user = await service.getUsuarioById({ where: { email } });
+    const user = await service.getUsuarioByEmail(email);
     if (!user) {
       return res.status(401).json({ message: "Email inválido" });
     }
@@ -29,7 +29,7 @@ export const login = async (req, res) => {
       { expiresIn: "3h" }
     );
 
-    res.json({ token });
+    res.json({ message: "Inicio de sesión exitoso", token });
   } catch (error) {
     res.status(500).json({ message: "Error al iniciar sesión" });
   }

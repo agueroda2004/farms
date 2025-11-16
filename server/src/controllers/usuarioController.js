@@ -15,16 +15,6 @@ export const createUsuario = async (req, res, next) => {
       .status(201)
       .json({ message: "Usuario creado exitosamente.", usuario: usuario });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return res.status(409).json({ error: "El email ya está en uso." });
-      }
-      if (error.code === "P2003") {
-        return res
-          .status(400)
-          .json({ error: "La granja_id proporcionada no existe." });
-      }
-    }
     next(error);
   }
 };
@@ -32,6 +22,20 @@ export const createUsuario = async (req, res, next) => {
 export const listUsuarios = async (req, res, next) => {
   try {
     const usuarios = await service.listUsuarios();
+    if (!usuarios || usuarios.length === 0) {
+      return res.status(404).json({ error: "No se encontraron usuarios." });
+    }
+    res.json(usuarios);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const listUsuariosByGranja = async (req, res, next) => {
+  try {
+    const usuarios = await service.listUsuariosByGranja(
+      Number(req.params.granja_id)
+    );
     if (!usuarios || usuarios.length === 0) {
       return res.status(404).json({ error: "No se encontraron usuarios." });
     }
@@ -57,14 +61,21 @@ export const updateUsuario = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { nombre, email, password, granja_id, admin, activo } = req.body;
-    const updatedUsuario = await service.updateUsuario(Number(id), {
-      nombre,
-      email,
-      password,
-      granja_id,
-      admin,
-      activo,
-    });
+    const dataToUpdate = {};
+
+    if (nombre !== undefined) dataToUpdate.nombre = nombre;
+    if (email !== undefined) dataToUpdate.email = email;
+    if (password) {
+      dataToUpdate.password = password;
+    }
+    if (granja_id !== undefined) dataToUpdate.granja_id = granja_id;
+    if (admin !== undefined) dataToUpdate.admin = admin;
+    if (activo !== undefined) dataToUpdate.activo = activo;
+
+    const updatedUsuario = await service.updateUsuario(
+      Number(id),
+      dataToUpdate
+    );
 
     if (!updatedUsuario)
       return res.status(404).json({ error: "Usuario no encontrado." });
@@ -74,19 +85,6 @@ export const updateUsuario = async (req, res, next) => {
       usuario: updatedUsuario,
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2002") {
-        return res.status(409).json({ error: "El email ya está en uso." });
-      }
-      if (error.code === "P2003") {
-        return res
-          .status(400)
-          .json({ error: "La granja_id proporcionada no existe." });
-      }
-      if (error.code === "P2025") {
-        return res.status(404).json({ error: "Usuario no encontrado." });
-      }
-    }
     next(error);
   }
 };

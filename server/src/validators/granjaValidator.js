@@ -1,8 +1,9 @@
-export function validateGranja(data) {
+export function validateGranja(req, res, next) {
   const errors = {};
+  const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return { valid: false, errors: { body: "Payload inválido." } };
+    return res.status(400).json({ error: "Payload inválido." });
   }
 
   if (!data.nombre || String(data.nombre).trim() === "") {
@@ -13,7 +14,7 @@ export function validateGranja(data) {
     errors.activo = "El campo 'activo' debe ser booleano.";
   }
 
-  if (Object.keys(errors).length === 0) return res.status(400).json(errors);
+  if (Object.keys(errors).length > 0) return res.status(400).json(errors);
   next();
 }
 
