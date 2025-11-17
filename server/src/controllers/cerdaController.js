@@ -2,7 +2,6 @@ import * as service from "../services/cerdaService.js";
 import { Prisma } from "@prisma/client";
 
 export const createCerda = async (req, res, next) => {
-  // ! revisar lo de la fecha
   try {
     const {
       nombre,
@@ -13,6 +12,7 @@ export const createCerda = async (req, res, next) => {
       raza_id,
       jaula_id,
     } = req.body;
+
     const cerda = await service.createCerda({
       nombre,
       paridad: Number(paridad),
@@ -22,6 +22,7 @@ export const createCerda = async (req, res, next) => {
       raza_id: { connect: { id: Number(raza_id) } },
       jaula_id: { connect: { id: Number(jaula_id) } },
     });
+
     res.status(201).json(cerda);
   } catch (error) {
     next(error);

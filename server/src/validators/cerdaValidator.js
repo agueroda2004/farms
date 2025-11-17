@@ -1,4 +1,4 @@
-export function validateCerda(req, res, next) {
+export function validateCreateCerda(req, res, next) {
   const errors = {};
   const data = req.body;
 
@@ -42,4 +42,17 @@ export function validateCerda(req, res, next) {
     return res.status(400).json({ errors });
   }
   next();
+}
+
+export function validateUpdateCerda(req, res, next) {
+  const errors = {};
+  const data = req.body;
+
+  if (!data || typeof data !== "object") {
+    return res.status(400).json({ error: "Payload inválido." });
+  }
+
+  if (data.paridad && isNaN(Number(data.paridad))) {
+    errors.paridad = "El campo 'paridad' debe ser un número válido.";
+  }
 }

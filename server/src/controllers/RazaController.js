@@ -1,14 +1,13 @@
 import * as service from "../services/razaService.js";
 import { Prisma } from "@prisma/client";
 
-// ! revisar todo
+// ✅
 export const createRaza = async (req, res, next) => {
   try {
-    const { nombre, descripcion, granja_id } = req.body;
+    const { nombre, granja_id } = req.body;
     const raza = await service.createRaza({
       nombre,
-      descripcion,
-      granja_id: { connect: { id: Number(granja_id) } },
+      granja: { connect: { id: Number(granja_id) } },
     });
     res.json({
       message: `Éxito al crear la raza ${raza.nombre}`,
@@ -19,26 +18,37 @@ export const createRaza = async (req, res, next) => {
   }
 };
 
+// ✅
 export const listRazasActivas = async (req, res, next) => {
   try {
     const { granja_id } = req.params;
     const razas = await service.listRazasActivas(Number(granja_id));
+    if (razas.length === 0) {
+      return res
+        .status(404)
+        .json({ error: "No se encontraron razas activas." });
+    }
     res.json(razas);
   } catch (error) {
     next(error);
   }
 };
 
+// ✅
 export const listRazas = async (req, res, next) => {
   try {
     const { granja_id } = req.params;
     const razas = await service.listRazas(Number(granja_id));
+    if (razas.length === 0) {
+      return res.status(404).json({ error: "No se encontraron razas." });
+    }
     res.json(razas);
   } catch (error) {
     next(error);
   }
 };
 
+// ✅
 export const getRazaById = async (req, res, next) => {
   try {
     const { id } = req.params;
@@ -49,16 +59,19 @@ export const getRazaById = async (req, res, next) => {
     next(error);
   }
 };
+
+// ✅
 export const updateRaza = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, descripcion, granja_id, activo } = req.body;
-    const raza = await service.updateRaza(Number(id), {
-      nombre,
-      descripcion,
-      granja_id,
-      activo,
-    });
+    const { nombre, granja_id, activo } = req.body;
+    const dataToUpdate = {};
+
+    if (nombre !== undefined) dataToUpdate.nombre = nombre;
+    if (granja_id !== undefined) dataToUpdate.granja_id = granja_id;
+    if (activo !== undefined) dataToUpdate.activo = activo;
+
+    const raza = await service.updateRaza(Number(id), dataToUpdate);
     res.json({
       message: `Éxito al actualizar la raza ${raza.nombre}`,
       raza,
@@ -68,6 +81,7 @@ export const updateRaza = async (req, res, next) => {
   }
 };
 
+// ✅
 export const deleteRaza = async (req, res, next) => {
   try {
     const { id } = req.params;

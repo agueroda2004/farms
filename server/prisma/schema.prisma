@@ -92,7 +92,7 @@ model Jaula {
   id Int @id @default(autoincrement())
   nombre String
   // ! cambiar esto a activo
-  acivo Boolean @default(true)
+  activo Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   cerdas Cerda[]

@@ -16,6 +16,11 @@ router.get(
 );
 router.get("/todas/:granja_id", checkGranjaAccess, jaulaController.listJaulas);
 router.get(
+  "/activas/:granja_id",
+  checkGranjaAccess,
+  jaulaController.listJaulasActivas
+);
+router.get(
   "/:id",
   checkGranjaAccess,
   validateIdParam,

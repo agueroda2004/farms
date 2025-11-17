@@ -6,7 +6,7 @@ export const createJaula = async (data) => {
 
 export const listJaulasActivas = async (granja_id) => {
   return prisma.jaula.findMany({
-    where: { granja_id: granja_id, activo: true },
+    where: { granja_id: granja_id, acivo: true },
   });
 };
 
