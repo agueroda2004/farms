@@ -9,23 +9,28 @@ import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = Router();
 
+// ✅
 router.get("/", usuarioController.listUsuarios);
+
+// ✅
 router.get("/:id", validateIdParam, usuarioController.getUsuarioById);
 
-// ! falta ruta para todos los usuarios de una granja
-// ! falta ruta para obtener un usuario por id y granja_id
-
+// ✅
 router.post(
   "/",
   checkGranjaAccess,
   validateUsuario,
   usuarioController.createUsuario
 );
+
+// ✅
 router.get(
   "/granja/:granja_id",
   checkGranjaAccess,
   usuarioController.listUsuariosByGranja
 );
+
+// ✅
 router.post(
   "/update/:id",
   checkGranjaAccess,
@@ -33,6 +38,8 @@ router.post(
   validateUpdateUsuario,
   usuarioController.updateUsuario
 );
+
+// ✅
 router.post(
   "/delete/:id",
   checkGranjaAccess,

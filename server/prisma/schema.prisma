@@ -10,8 +10,8 @@ datasource db {
 enum Condicion_Cerda {
   viva
   desecho
-  muerta
-  sacrificada
+  muerte
+  sacrificio
   aborto
   lactando
   gestando
@@ -113,8 +113,8 @@ model Cerda {
   
   raza_id Int
   raza Raza @relation(fields: [raza_id], references: [id])
-  jaula_id Int @unique
-  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  jaula_id Int? @unique
+  jaula Jaula? @relation(fields: [jaula_id], references: [id])
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   cerda_Removida Cerda_Removida[]
@@ -132,6 +132,7 @@ model Cerda_Removida {
   cerda_id Int
   cerda Cerda @relation(fields: [cerda_id], references: [id])
   causa Causa_Removida
+  condicion_anterior Condicion_Cerda
   observacion String?
   fecha DateTime
   granja_id Int

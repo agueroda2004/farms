@@ -6,26 +6,35 @@ import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = Router();
 
-// ! Falta la ruta de jaulas activas
-
+// ✅
 router.post("/", checkGranjaAccess, validateJaula, jaulaController.createJaula);
+
+// ✅
 router.get(
   "/activas/:granja_id",
   checkGranjaAccess,
   jaulaController.listJaulasActivas
 );
+
+// ✅
 router.get("/todas/:granja_id", checkGranjaAccess, jaulaController.listJaulas);
+
+// ✅
 router.get(
   "/activas/:granja_id",
   checkGranjaAccess,
   jaulaController.listJaulasActivas
 );
+
+// ✅
 router.get(
   "/:id",
   checkGranjaAccess,
   validateIdParam,
   jaulaController.getJaulaById
 );
+
+// ✅
 router.post(
   "/update/:id",
   checkGranjaAccess,
@@ -33,6 +42,8 @@ router.post(
   validateJaula,
   jaulaController.updateJaula
 );
+
+// ✅
 router.post(
   "/delete/:id",
   checkGranjaAccess,
