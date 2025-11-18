@@ -4,7 +4,6 @@ import { Prisma } from "@prisma/client";
 export const createGranja = async (req, res, next) => {
   try {
     const { nombre } = req.body;
-    console.log(nombre);
     const granja = await service.createGranja({ nombre });
     res.json({
       message: `Éxito al crear la granja ${granja.nombre}`,
@@ -44,7 +43,12 @@ export const updateGranja = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { nombre, activo } = req.body;
-    const updated = await service.updateGranja(Number(id), { nombre, activo });
+    const dataToUpdate = {};
+
+    if (nombre !== undefined) dataToUpdate.nombre = nombre;
+    if (activo !== undefined) dataToUpdate.activo = activo;
+
+    const updated = await service.updateGranja(Number(id), dataToUpdate);
     res.json({
       message: `Éxito al actualizar la granja ${updated.nombre}`,
       farm: updated,
@@ -65,11 +69,11 @@ export const deleteGranja = async (req, res, next) => {
     const deleted = await service.deleteGranja(Number(id));
     res.json(deleted);
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return res.status(404).json({ error: "Granja no encontrada." });
-      }
-      if (error.code === "P2003") {
+    if (
+      error instanceof Prisma.PrismaClientKnownRequestError &&
+      error.code === "P2003"
+    ) {
+      try {
         const updated = await service.updateGranja(Number(req.params.id), {
           activo: false,
         });
@@ -78,6 +82,8 @@ export const deleteGranja = async (req, res, next) => {
             "La granja no se pudo eliminar porque está relacionada con otros registros. Se ha desactivado en su lugar.",
           granja: updated,
         });
+      } catch (updateError) {
+        return next(updateError);
       }
     }
     next(error);

@@ -1,6 +1,7 @@
 import * as service from "../services/cerdaService.js";
 import { Prisma } from "@prisma/client";
 
+// ✅
 export const createCerda = async (req, res, next) => {
   try {
     const {
@@ -18,9 +19,9 @@ export const createCerda = async (req, res, next) => {
       paridad: Number(paridad),
       fecha_ingreso,
       observacion,
-      granja_id: { connect: { id: Number(granja_id) } },
-      raza_id: { connect: { id: Number(raza_id) } },
-      jaula_id: { connect: { id: Number(jaula_id) } },
+      granja: { connect: { id: Number(granja_id) } },
+      raza: { connect: { id: Number(raza_id) } },
+      jaula: { connect: { id: Number(jaula_id) } },
     });
 
     res.status(201).json(cerda);
@@ -57,17 +58,10 @@ export const listCerdas = async (req, res, next) => {
 
 export const getCerdaById = async (req, res, next) => {
   try {
-    const userGranjaId = req.user.granjaId;
-
     const { id } = req.params;
     const cerda = await service.getCerdaById(Number(id));
     if (!cerda) return res.status(404).json({ error: "Cerda no encontrada." });
 
-    if (cerda.granja_id !== userGranjaId) {
-      return res.status(403).json({
-        error: "Acceso denegado. Esta cerda no pertenece a tu granja.",
-      });
-    }
     res.json(cerda);
   } catch (error) {
     next(error);
@@ -76,8 +70,6 @@ export const getCerdaById = async (req, res, next) => {
 
 export const updateCerda = async (req, res, next) => {
   try {
-    const userGranjaId = req.user.granjaId;
-
     const { id } = req.params;
     const {
       nombre,
@@ -90,22 +82,17 @@ export const updateCerda = async (req, res, next) => {
       activo,
     } = req.body;
 
-    if (Number(granja_id) !== userGranjaId) {
-      return res.status(403).json({
-        error:
-          "Acceso denegado. No puedes modificar una cerda fuera de tu granja.",
-      });
-    }
-    const cerda = await service.updateCerda(Number(id), {
-      nombre,
-      paridad: Number(paridad),
-      fecha_ingreso,
-      observacion,
-      granja_id: { connect: { id: Number(granja_id) } },
-      raza_id: { connect: { id: Number(raza_id) } },
-      jaula_id: { connect: { id: Number(jaula_id) } },
-      activo,
-    });
+    const dataToUpdate = {};
+    if (nombre !== undefined) dataToUpdate.nombre = nombre;
+    if (paridad !== undefined) dataToUpdate.paridad = Number(paridad);
+    if (fecha_ingreso !== undefined) dataToUpdate.fecha_ingreso = fecha_ingreso;
+    if (observacion !== undefined) dataToUpdate.observacion = observacion;
+    if (granja_id !== undefined) dataToUpdate.granja_id = granja_id;
+    if (raza_id !== undefined) dataToUpdate.raza_id = raza_id;
+    if (jaula_id !== undefined) dataToUpdate.jaula_id = jaula_id;
+    if (activo !== undefined) dataToUpdate.activo = activo;
+
+    const cerda = await service.updateCerda(Number(id), dataToUpdate);
     res.json({
       message: `Éxito al actualizar la cerda ${cerda.nombre}`,
       cerda,
@@ -117,7 +104,6 @@ export const updateCerda = async (req, res, next) => {
 
 export const deleteCerda = async (req, res, next) => {
   try {
-    const userGranjaId = req.user.granjaId;
     const { id } = req.params;
 
     const cerda = await service.getCerdaById(Number(id));
@@ -125,12 +111,6 @@ export const deleteCerda = async (req, res, next) => {
       return res.status(404).json({ error: "Cerda no encontrada." });
     }
 
-    if (cerda.granja_id !== userGranjaId) {
-      return res.status(403).json({
-        error:
-          "Acceso denegado. No puedes eliminar una cerda fuera de tu granja.",
-      });
-    }
     await service.deleteCerda(Number(id));
     res.json({ message: "Cerda eliminada exitosamente." });
   } catch (error) {

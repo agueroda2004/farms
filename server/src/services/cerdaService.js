@@ -1,5 +1,6 @@
 import prisma from "../prismaClient.js";
 
+// ✅
 export const createCerda = async (data) => {
   return await prisma.cerda.create({ data });
 };
