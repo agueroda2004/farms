@@ -144,6 +144,7 @@ model Aborto {
   fecha DateTime
   hora DateTime @db.Time
   observacion String?
+  condicion_anterior Condicion_Cerda
   cerda_id Int
   cerda Cerda @relation(fields: [cerda_id], references: [id])
   jaula_id Int

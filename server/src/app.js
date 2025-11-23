@@ -5,6 +5,7 @@ import authRoutes from "./auth/routes/auth.js";
 import razaRoutes from "./routes/raza.route.js";
 import jaulaRoutes from "./routes/jaula.route.js";
 import cerdasRoutes from "./routes/cerda.route.js";
+import abortoRoutes from "./routes/cerda.route.js";
 import cerdaRemovidaRoutes from "./routes/cerdaRemovida.route.js";
 import { handlePrismaError } from "./validators/prisma/prismaValidator.js";
 import {
@@ -27,6 +28,7 @@ app.use("/api/razas", razaRoutes);
 app.use("/api/jaulas", jaulaRoutes);
 app.use("/api/cerdas", cerdasRoutes);
 app.use("/api/cerdasRemovidas", cerdaRemovidaRoutes);
+app.use("/api/abortos", abortoRoutes);
 
 // Manejo básico de errores (middleware)
 app.use(handlePrismaError);
