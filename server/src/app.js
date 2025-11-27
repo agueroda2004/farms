@@ -7,6 +7,7 @@ import jaulaRoutes from "./routes/jaula.route.js";
 import cerdasRoutes from "./routes/cerda.route.js";
 import abortoRoutes from "./routes/cerda.route.js";
 import cerdaRemovidaRoutes from "./routes/cerdaRemovida.route.js";
+import berracoRoutes from "./routes/berraco.route.js";
 import { handlePrismaError } from "./validators/prisma/prismaValidator.js";
 import {
   authMiddleware,
@@ -29,6 +30,7 @@ app.use("/api/jaulas", jaulaRoutes);
 app.use("/api/cerdas", cerdasRoutes);
 app.use("/api/cerdasRemovidas", cerdaRemovidaRoutes);
 app.use("/api/abortos", abortoRoutes);
+app.use("/api/berracos", berracoRoutes);
 
 // Manejo básico de errores (middleware)
 app.use(handlePrismaError);

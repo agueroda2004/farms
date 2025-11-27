@@ -41,16 +41,10 @@ export const updateAborto = async (req, res, next) => {
   try {
     const { id } = req.params;
     const { fecha, observacion, granja_id, cerda_id } = req.body;
-    const dataToUpdate = {};
+    const dataToUpdate = { granja_id, cerda_id };
 
     if (fecha !== undefined) dataToUpdate.fecha = fecha;
     if (observacion !== undefined) dataToUpdate.observacion = observacion;
-    // ! Eliminar esto, granja_id siempre es obligatoria
-    if (granja_id !== undefined)
-      dataToUpdate.granja = { connect: { id: Number(granja_id) } };
-    // ! Eliminar esto, cerda_id siempre es obligatoria
-    if (cerda_id !== undefined)
-      dataToUpdate.cerda = { connect: { id: Number(cerda_id) } };
 
     const aborto = await service.updateAborto(Number(id), dataToUpdate);
     res.status(200).json(aborto);
