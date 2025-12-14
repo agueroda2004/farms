@@ -1,33 +1,39 @@
+const causas = ["desecho", "muerte", "sacrificio"];
+
 export function validateCreateCerdaRemovida(req, res, next) {
   const errors = {};
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido o vacío." });
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (!data.causa) {
-    errors.causa = "El campo 'causa' es obligatorio.";
+    errors.causa = "The field 'causa' is required.";
+  } else if (!causas.includes(data.causa)) {
+    errors.causa = `The field 'causa' must be one of the following values: ${causas.join(
+      ", "
+    )}.`;
   }
 
   if (!data.fecha || String(data.fecha).trim() === "") {
-    errors.fecha = "El campo 'fecha' es obligatorio.";
+    errors.fecha = "The field 'fecha' is required.";
   } else {
     const fecha = new Date(data.fecha);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
     if (isNaN(fecha.getTime())) {
-      errors.fecha = "El formato de la fecha es inválido.";
+      errors.fecha = "The date format is invalid.";
     } else if (fecha > hoy) {
-      errors.fecha = "La fecha no puede ser una fecha futura.";
+      errors.fecha = "The date cannot be a future date.";
     }
   }
 
-  if (!data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
+  if (!data.cerda_id) {
+    errors.cerda_id = "The field 'cerda_id' is required.";
+  } else if (isNaN(Number(data.cerda_id))) {
+    errors.cerda_id = "The field 'cerda_id' must be a valid number.";
   }
 
   if (Object.keys(errors).length > 0) {
@@ -47,17 +53,18 @@ export function validateUpdateCerdaRemovida(req, res, next) {
     hoy.setHours(0, 0, 0, 0);
 
     if (isNaN(fechaIngreso.getTime())) {
-      errors.fecha_ingreso = "El formato de la fecha de ingreso es inválido.";
+      errors.fecha_ingreso = "The date format is invalid.";
     } else if (fechaIngreso > hoy) {
-      errors.fecha_ingreso =
-        "La fecha de ingreso no puede ser una fecha futura.";
+      errors.fecha_ingreso = "The date cannot be a future date.";
     }
   }
 
-  if (!data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
+  if (data.causa) {
+    if (!causas.includes(data.causa)) {
+      errors.causa = `The field 'causa' must be one of the following values: ${causas.join(
+        ", "
+      )}.`;
+    }
   }
 
   if (Object.keys(errors).length > 0) {

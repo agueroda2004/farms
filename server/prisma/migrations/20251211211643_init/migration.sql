@@ -13,6 +13,7 @@ CREATE TABLE `Usuario` (
     `nombre` VARCHAR(191) NOT NULL,
     `email` VARCHAR(191) NOT NULL,
     `password` VARCHAR(191) NOT NULL,
+    `admin` BOOLEAN NOT NULL DEFAULT false,
     `granja_id` INTEGER NOT NULL,
     `activo` BOOLEAN NOT NULL DEFAULT true,
 
@@ -34,7 +35,8 @@ CREATE TABLE `Raza` (
 CREATE TABLE `Jaula` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `nombre` VARCHAR(191) NOT NULL,
-    `acivo` BOOLEAN NOT NULL DEFAULT true,
+    `activo` BOOLEAN NOT NULL DEFAULT true,
+    `disponible` BOOLEAN NOT NULL DEFAULT true,
     `granja_id` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
@@ -47,12 +49,14 @@ CREATE TABLE `Cerda` (
     `paridad` INTEGER NOT NULL,
     `fecha_ingreso` DATETIME(3) NOT NULL,
     `activo` BOOLEAN NOT NULL DEFAULT true,
-    `condicion` ENUM('viva', 'desecho', 'muerta', 'sacrificada', 'aborto', 'lactando', 'gestando', 'destetada') NOT NULL DEFAULT 'viva',
+    `condicion` ENUM('viva', 'desecho', 'muerte', 'sacrificio', 'aborto', 'lactando', 'gestando', 'destetada') NOT NULL DEFAULT 'viva',
     `observacion` VARCHAR(191) NULL,
+    `paridera_id` INTEGER NULL,
     `raza_id` INTEGER NOT NULL,
-    `jaula_id` INTEGER NOT NULL,
+    `jaula_id` INTEGER NULL,
     `granja_id` INTEGER NOT NULL,
 
+    UNIQUE INDEX `Cerda_jaula_id_key`(`jaula_id`),
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
@@ -61,6 +65,7 @@ CREATE TABLE `Cerda_Removida` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `cerda_id` INTEGER NOT NULL,
     `causa` ENUM('desecho', 'muerte', 'sacrificio') NOT NULL,
+    `condicion_anterior` ENUM('viva', 'desecho', 'muerte', 'sacrificio', 'aborto', 'lactando', 'gestando', 'destetada') NOT NULL,
     `observacion` VARCHAR(191) NULL,
     `fecha` DATETIME(3) NOT NULL,
     `granja_id` INTEGER NOT NULL,
@@ -74,6 +79,7 @@ CREATE TABLE `Aborto` (
     `fecha` DATETIME(3) NOT NULL,
     `hora` TIME NOT NULL,
     `observacion` VARCHAR(191) NULL,
+    `condicion_anterior` ENUM('viva', 'desecho', 'muerte', 'sacrificio', 'aborto', 'lactando', 'gestando', 'destetada') NOT NULL,
     `cerda_id` INTEGER NOT NULL,
     `jaula_id` INTEGER NOT NULL,
     `granja_id` INTEGER NOT NULL,
@@ -101,6 +107,7 @@ CREATE TABLE `Berraco_Removido` (
     `causa` ENUM('desecho', 'muerte', 'sacrificio') NOT NULL,
     `observacion` VARCHAR(191) NULL,
     `fecha` DATETIME(3) NOT NULL,
+    `condicion_anterior` ENUM('vivo', 'desecho', 'muerto', 'sacrificado') NOT NULL,
     `berraco_id` INTEGER NOT NULL,
     `granja_id` INTEGER NOT NULL,
 
@@ -120,16 +127,26 @@ CREATE TABLE `Operario` (
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 -- CreateTable
+CREATE TABLE `Servicio` (
+    `id` INTEGER NOT NULL AUTO_INCREMENT,
+    `cerda_id` INTEGER NOT NULL,
+    `jaula_id` INTEGER NOT NULL,
+    `granja_id` INTEGER NOT NULL,
+    `observacion` VARCHAR(191) NULL,
+    `condicion_anterior` ENUM('viva', 'desecho', 'muerte', 'sacrificio', 'aborto', 'lactando', 'gestando', 'destetada') NOT NULL DEFAULT 'viva',
+
+    PRIMARY KEY (`id`)
+) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
+
+-- CreateTable
 CREATE TABLE `Monta` (
     `id` INTEGER NOT NULL AUTO_INCREMENT,
     `fecha` DATETIME(3) NOT NULL,
-    `turno` ENUM('manana', 'tarde', 'noche') NOT NULL,
-    `observacion` VARCHAR(191) NULL,
-    `cerda_id` INTEGER NOT NULL,
     `berraco_id` INTEGER NOT NULL,
-    `granja_id` INTEGER NOT NULL,
-    `jaula_id` INTEGER NOT NULL,
     `operario_id` INTEGER NOT NULL,
+    `granja_id` INTEGER NOT NULL,
+    `turno` ENUM('manana', 'tarde', 'noche') NOT NULL,
+    `servicio_id` INTEGER NOT NULL,
 
     PRIMARY KEY (`id`)
 ) DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
@@ -282,10 +299,13 @@ ALTER TABLE `Raza` ADD CONSTRAINT `Raza_granja_id_fkey` FOREIGN KEY (`granja_id`
 ALTER TABLE `Jaula` ADD CONSTRAINT `Jaula_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Cerda` ADD CONSTRAINT `Cerda_paridera_id_fkey` FOREIGN KEY (`paridera_id`) REFERENCES `Paridera`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Cerda` ADD CONSTRAINT `Cerda_raza_id_fkey` FOREIGN KEY (`raza_id`) REFERENCES `Raza`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Cerda` ADD CONSTRAINT `Cerda_jaula_id_fkey` FOREIGN KEY (`jaula_id`) REFERENCES `Jaula`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Cerda` ADD CONSTRAINT `Cerda_jaula_id_fkey` FOREIGN KEY (`jaula_id`) REFERENCES `Jaula`(`id`) ON DELETE SET NULL ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Cerda` ADD CONSTRAINT `Cerda_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
@@ -324,19 +344,25 @@ ALTER TABLE `Berraco_Removido` ADD CONSTRAINT `Berraco_Removido_granja_id_fkey` 
 ALTER TABLE `Operario` ADD CONSTRAINT `Operario_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Monta` ADD CONSTRAINT `Monta_cerda_id_fkey` FOREIGN KEY (`cerda_id`) REFERENCES `Cerda`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Servicio` ADD CONSTRAINT `Servicio_cerda_id_fkey` FOREIGN KEY (`cerda_id`) REFERENCES `Cerda`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Servicio` ADD CONSTRAINT `Servicio_jaula_id_fkey` FOREIGN KEY (`jaula_id`) REFERENCES `Jaula`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
+ALTER TABLE `Servicio` ADD CONSTRAINT `Servicio_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Monta` ADD CONSTRAINT `Monta_berraco_id_fkey` FOREIGN KEY (`berraco_id`) REFERENCES `Berraco`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
+ALTER TABLE `Monta` ADD CONSTRAINT `Monta_operario_id_fkey` FOREIGN KEY (`operario_id`) REFERENCES `Operario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+
+-- AddForeignKey
 ALTER TABLE `Monta` ADD CONSTRAINT `Monta_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
-ALTER TABLE `Monta` ADD CONSTRAINT `Monta_jaula_id_fkey` FOREIGN KEY (`jaula_id`) REFERENCES `Jaula`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
-
--- AddForeignKey
-ALTER TABLE `Monta` ADD CONSTRAINT `Monta_operario_id_fkey` FOREIGN KEY (`operario_id`) REFERENCES `Operario`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
+ALTER TABLE `Monta` ADD CONSTRAINT `Monta_servicio_id_fkey` FOREIGN KEY (`servicio_id`) REFERENCES `Servicio`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;
 
 -- AddForeignKey
 ALTER TABLE `Paridera` ADD CONSTRAINT `Paridera_granja_id_fkey` FOREIGN KEY (`granja_id`) REFERENCES `Granja`(`id`) ON DELETE RESTRICT ON UPDATE CASCADE;

@@ -3,11 +3,11 @@ export function validateCreateGranja(req, res, next) {
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido." });
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (!data.nombre || String(data.nombre).trim() === "") {
-    errors.nombre = "El campo 'nombre' es obligatorio.";
+    errors.nombre = "The 'nombre' field is required.";
   }
 
   if (Object.keys(errors).length > 0) return res.status(400).json(errors);
@@ -19,11 +19,11 @@ export function validateUpdateGranja(req, res, next) {
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido." });
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (data.activo && typeof data.activo !== "boolean") {
-    errors.activo = "El campo 'activo' debe ser booleano.";
+    errors.activo = "The 'activo' field must be a boolean.";
   }
 
   if (Object.keys(errors).length > 0) return res.status(400).json(errors);

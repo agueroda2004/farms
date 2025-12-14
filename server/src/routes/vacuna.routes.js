@@ -1,9 +1,9 @@
-import * as controller from "../controllers/cerdaRemovidaController.js";
+import * as controller from "../controllers/vacunaController.js";
 import express from "express";
 import {
-  validateCreateCerdaRemovida,
-  validateUpdateCerdaRemovida,
-} from "../validators/cerdaRemovidaValidator.js";
+  validateCreateVacuna,
+  validateUpdateVacuna,
+} from "../validators/vacunaValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
@@ -12,15 +12,15 @@ const router = express.Router();
 router.post(
   "/",
   checkGranjaAccess,
-  validateCreateCerdaRemovida,
-  controller.createCerdaRemovida
+  validateCreateVacuna,
+  controller.createVacuna
 );
 
 router.get(
   "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.listCerdasRemovidas
+  controller.getVacunas
 );
 
 // ? Se debe mandar el granja_id para validar el acceso
@@ -28,22 +28,22 @@ router.get(
   "/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.getCerdaRemovidaById
+  controller.getVacunaById
 );
 
 router.post(
   "/update/:id",
   validateIdParam,
   checkGranjaAccess,
-  validateUpdateCerdaRemovida,
-  controller.updateCerdaRemovida
+  validateUpdateVacuna,
+  controller.updateVacuna
 );
 
 router.post(
   "/delete/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.deleteCerdaRemovida
+  controller.deleteVacuna
 );
 
 export default router;

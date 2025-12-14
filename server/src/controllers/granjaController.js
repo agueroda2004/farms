@@ -3,10 +3,9 @@ import { Prisma } from "@prisma/client";
 
 export const createGranja = async (req, res, next) => {
   try {
-    const { nombre } = req.body;
-    const granja = await service.createGranja({ nombre });
-    res.json({
-      message: `Éxito al crear la granja ${granja.nombre}`,
+    const granja = await service.createGranja(req.body);
+    res.status(201).json({
+      message: "Granja created successfully",
       granja,
     });
   } catch (error) {
@@ -17,10 +16,7 @@ export const createGranja = async (req, res, next) => {
 export const listGranjas = async (req, res, next) => {
   try {
     const granjas = await service.listGranjas();
-    if (!granjas || granjas.length === 0) {
-      return res.status(404).json({ error: "No se encontraron granjas." });
-    }
-    res.json(granjas);
+    res.status(200).json(granjas);
   } catch (error) {
     next(error);
   }
@@ -30,10 +26,8 @@ export const getGranjaById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const granja = await service.getGranjaById(Number(id));
-    if (!granja)
-      return res.status(404).json({ error: "Granja no encontrada." });
-
-    res.json(granja);
+    if (!granja) return res.status(404).json({ error: "Granja not found." });
+    res.status(200).json(granja);
   } catch (error) {
     next(error);
   }
@@ -42,23 +36,13 @@ export const getGranjaById = async (req, res, next) => {
 export const updateGranja = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, activo } = req.body;
-    const dataToUpdate = {};
 
-    if (nombre !== undefined) dataToUpdate.nombre = nombre;
-    if (activo !== undefined) dataToUpdate.activo = activo;
-
-    const updated = await service.updateGranja(Number(id), dataToUpdate);
+    const updatedGranja = await service.updateGranja(Number(id), req.body);
     res.json({
-      message: `Éxito al actualizar la granja ${updated.nombre}`,
-      farm: updated,
+      message: "Granja updated successfully",
+      granja: updatedGranja,
     });
   } catch (error) {
-    if (error instanceof Prisma.PrismaClientKnownRequestError) {
-      if (error.code === "P2025") {
-        return res.status(404).json({ error: "Granja no encontrada." });
-      }
-    }
     next(error);
   }
 };
@@ -66,21 +50,24 @@ export const updateGranja = async (req, res, next) => {
 export const deleteGranja = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const deleted = await service.deleteGranja(Number(id));
-    res.json(deleted);
+    const deletedGranja = await service.deleteGranja(Number(id));
+    res.json({ message: "Granja deleted successfully", granja: deletedGranja });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2003"
     ) {
       try {
-        const updated = await service.updateGranja(Number(req.params.id), {
-          activo: false,
-        });
+        const updatedGranja = await service.updateGranja(
+          Number(req.params.id),
+          {
+            activo: false,
+          }
+        );
         return res.json({
           message:
-            "La granja no se pudo eliminar porque está relacionada con otros registros. Se ha desactivado en su lugar.",
-          granja: updated,
+            "Granja desactivated instead of deleted due to existing dependencies.",
+          granja: updatedGranja,
         });
       } catch (updateError) {
         return next(updateError);

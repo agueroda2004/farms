@@ -3,30 +3,11 @@ import { Prisma } from "@prisma/client";
 
 export const createJaula = async (req, res, next) => {
   try {
-    const { nombre, granja_id } = req.body;
-    const jaula = await service.createJaula({
-      nombre,
-      granja: { connect: { id: Number(granja_id) } },
-    });
-    res.json({
-      message: `Éxito al crear la jaula ${jaula.nombre}`,
+    const jaula = await service.createJaula(req.body);
+    res.status(201).json({
+      message: "Jaula created successfully",
       jaula,
     });
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const listJaulasActivas = async (req, res, next) => {
-  try {
-    const { granja_id } = req.params;
-    const jaulas = await service.listJaulasActivas(Number(granja_id));
-    if (jaulas.length === 0) {
-      return res
-        .status(404)
-        .json({ error: "No se encontraron jaulas activas." });
-    }
-    res.json(jaulas);
   } catch (error) {
     next(error);
   }
@@ -36,9 +17,7 @@ export const listJaulas = async (req, res, next) => {
   try {
     const { granja_id } = req.params;
     const jaulas = await service.listJaulas(Number(granja_id));
-    if (jaulas.length === 0) {
-      return res.status(404).json({ error: "No se encontraron jaulas." });
-    }
+
     res.json(jaulas);
   } catch (error) {
     next(error);
@@ -49,7 +28,7 @@ export const getJaulaById = async (req, res, next) => {
   try {
     const { id } = req.params;
     const jaula = await service.getJaulaById(Number(id));
-    if (!jaula) return res.status(404).json({ error: "Jaula no encontrada." });
+    if (!jaula) return res.status(404).json({ error: "Jaula not found." });
     res.json(jaula);
   } catch (error) {
     next(error);
@@ -58,15 +37,10 @@ export const getJaulaById = async (req, res, next) => {
 export const updateJaula = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { nombre, granja_id, acivo } = req.body;
-    const jaula = await service.updateJaula(Number(id), {
-      nombre,
-      granja: { connect: { id: Number(granja_id) } },
-      acivo,
-    });
+    const jaulaUpdated = await service.updateJaula(Number(id), req.body);
     res.json({
-      message: `Éxito al actualizar la jaula ${jaula.nombre}`,
-      jaula,
+      message: "Jaula updated successfully.",
+      jaula: jaulaUpdated,
     });
   } catch (error) {
     next(error);
@@ -76,18 +50,20 @@ export const deleteJaula = async (req, res, next) => {
   try {
     const { id } = req.params;
     await service.deleteJaula(Number(id));
-    res.json({ message: "Jaula eliminada exitosamente." });
+    res.json({ message: "Jaula deleted successfully." });
   } catch (error) {
     if (
       error instanceof Prisma.PrismaClientKnownRequestError &&
       error.code === "P2003"
     ) {
       try {
-        const jaulaDesactivada = await service.updateJaula(Number(id), {
-          activo: false,
-        });
+        const jaulaDesactivada = await service.desactivarJaula(
+          Number(id),
+          req.body
+        );
         res.json({
-          message: `La jaula ${jaulaDesactivada.nombre} esta asociada a otros registros por lo que ha sido desactivada en lugar de eliminada.`,
+          message:
+            "The jaula is associated with other records and has been deactivated instead of deleted.",
           jaula: jaulaDesactivada,
         });
       } catch (updateError) {

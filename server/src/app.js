@@ -9,6 +9,11 @@ import abortoRoutes from "./routes/cerda.route.js";
 import cerdaRemovidaRoutes from "./routes/cerdaRemovida.route.js";
 import berracoRoutes from "./routes/berraco.route.js";
 import berracoRemovidoRoutes from "./routes/berracoRemovido.route.js";
+import operarioRoutes from "./routes/operario.route.js";
+import servicioRoutes from "./routes/servicio.routes.js";
+import parideraRoutes from "./routes/paridera.route.js";
+import vacunaRoutes from "./routes/vacuna.routes.js";
+import partoRoutes from "./routes/parto.route.js";
 import { handlePrismaError } from "./validators/prisma/prismaValidator.js";
 import {
   authMiddleware,
@@ -24,15 +29,21 @@ app.use("/api/granja", granjaRoutes);
 app.use(authMiddleware);
 
 // Rutas
-app.use("/api/usuario", usuarioRoutes);
-app.use("/api/auth", authRoutes);
-app.use("/api/razas", razaRoutes);
 app.use("/api/jaulas", jaulaRoutes);
+app.use("/api/razas", razaRoutes);
 app.use("/api/cerdas", cerdasRoutes);
 app.use("/api/cerdasRemovidas", cerdaRemovidaRoutes);
 app.use("/api/abortos", abortoRoutes);
 app.use("/api/berracos", berracoRoutes);
 app.use("/api/berracosRemovidos", berracoRemovidoRoutes);
+app.use("/api/servicios", servicioRoutes);
+app.use("/api/operarios", operarioRoutes);
+app.use("/api/vacunas", vacunaRoutes);
+app.use("/api/parideras", parideraRoutes);
+app.use("/api/partos", partoRoutes);
+
+app.use("/api/usuario", usuarioRoutes);
+app.use("/api/auth", authRoutes);
 
 // Manejo básico de errores (middleware)
 app.use(handlePrismaError);

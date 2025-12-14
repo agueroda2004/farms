@@ -7,7 +7,17 @@ export const createAborto = async (data) => {
     where: { id: cerda_id },
   });
 
-  const [aborto, updateCerda] = await prisma.$transaction([
+  if (!cerda) {
+    throw new Error("Cerda not found.");
+  }
+
+  if (cerda.condicion != "gestando") {
+    throw new Error("Cerda is not in gestating condition.");
+  }
+
+  await validarFechaPorServicio(cerda_id, fecha);
+
+  const [aborto, ..._] = await prisma.$transaction([
     prisma.aborto.create({
       data: {
         fecha,
@@ -25,7 +35,7 @@ export const createAborto = async (data) => {
       },
     }),
   ]);
-  return { aborto, updateCerda };
+  return aborto;
 };
 
 export const listAbortosByGranja = async (granja_id) => {
@@ -39,24 +49,70 @@ export const getAbortoById = async (id) => {
 };
 
 export const updateAborto = async (id, data) => {
-  return await prisma.aborto.update({ where: { id: id }, data });
-};
+  const { fecha, hora, observacion } = data;
+  const dataToUpdate = {};
 
-export const deleteAborto = async (data) => {
-  const { id, cerda_id } = data;
   const aborto = await prisma.aborto.findUnique({
     where: { id: id },
   });
 
-  const [deleteAborto, updateCerda] = await prisma.$transaction([
+  if (!aborto) {
+    throw new Error("Aborto not found.");
+  }
+
+  if (fecha !== undefined) {
+    await validarFechaPorServicio(aborto.cerda_id, fecha);
+    dataToUpdate.fecha = fecha;
+  }
+  if (hora !== undefined) {
+    dataToUpdate.hora = hora;
+  }
+  if (observacion !== undefined) {
+    dataToUpdate.observacion = observacion;
+  }
+
+  return await prisma.aborto.update({ where: { id: id }, data: dataToUpdate });
+};
+
+export const deleteAborto = async (id) => {
+  const { id } = data;
+  const aborto = await prisma.aborto.findUnique({
+    where: { id: id },
+  });
+
+  if (!aborto) {
+    throw new Error("Aborto not found.");
+  }
+
+  const [deleteAborto, ..._] = await prisma.$transaction([
     prisma.aborto.delete({ where: { id: id } }),
     prisma.cerda.update({
-      where: { id: cerda_id },
+      where: { id: aborto.cerda_id },
       data: {
         estado: aborto.condicion_anterior,
       },
     }),
   ]);
 
-  return { deleteAborto, updateCerda };
+  return deleteAborto;
+};
+
+const validarFechaPorServicio = async (cerda_id, fecha) => {
+  const servicio = await prisma.servicio.findFirst({
+    where: {
+      cerda_id: cerda_id,
+    },
+    include: { montas: true },
+    orderBy: { fecha: "desc" },
+  });
+
+  if (!servicio) {
+    throw new Error("No servicio found for this cerda.");
+  }
+
+  if (servicio.montas[0].fecha > fecha) {
+    throw new Error(
+      "The date cannot be earlier than your last 'servicio' date."
+    );
+  }
 };

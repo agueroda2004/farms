@@ -3,35 +3,42 @@ export function validateCreateBerraco(req, res, next) {
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido o vacío." });
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (!data.nombre || String(data.nombre).trim() === "") {
-    errors.nombre = "El campo 'nombre' es obligatorio.";
-  }
-
-  if (!data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
+    errors.nombre = "Name field is required.";
   }
 
   if (!data.raza_id) {
-    errors.raza_id = "El campo 'raza_id' es obligatorio.";
+    errors.raza_id = "Raza_id field is required.";
   } else if (isNaN(Number(data.raza_id))) {
-    errors.raza_id = "El campo 'raza_id' debe ser un número válido.";
+    errors.raza_id = "Raza_id field must be a valid number.";
   }
 
   if (!data.jaula_id) {
-    errors.jaula_id = "El campo 'jaula_id' es obligatorio.";
+    errors.jaula_id = "Jaula_id field is required.";
   } else if (isNaN(Number(data.jaula_id))) {
-    errors.jaula_id = "El campo 'jaula_id' debe ser un número válido.";
+    errors.jaula_id = "Jaula_id field must be a valid number.";
+  }
+
+  if (!data.fecha_ingreso || String(data.fecha_ingreso).trim() === "") {
+    errors.fecha_ingreso = "Fecha_ingreso is required.";
+  } else {
+    const fechaIngreso = new Date(data.fecha_ingreso);
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+
+    if (isNaN(fechaIngreso.getTime())) {
+      errors.fecha_ingreso = "Fecha_ingreso format is invalid.";
+    } else if (fechaIngreso > hoy) {
+      errors.fecha_ingreso = "Fecha_ingreso cannot be a future date.";
+    }
   }
 
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ errors });
   }
-
   next();
 }
 
@@ -40,28 +47,15 @@ export function validateUpdateBerraco(req, res, next) {
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido o vacío." });
-  }
-  if (data.nombre || String(data.nombre).trim() === "") {
-    errors.nombre = "El campo 'nombre' no puede estar vacío.";
+    return res.status(400).json({ error: "Invalid or empty payload." });
   }
 
-  if (data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
+  if (data.raza_id && isNaN(Number(data.raza_id))) {
+    errors.raza_id = "Raza_id must be a valid number.";
   }
 
-  if (data.raza_id) {
-    errors.raza_id = "El campo 'raza_id' es obligatorio.";
-  } else if (isNaN(Number(data.raza_id))) {
-    errors.raza_id = "El campo 'raza_id' debe ser un número válido.";
-  }
-
-  if (data.jaula_id) {
-    errors.jaula_id = "El campo 'jaula_id' es obligatorio.";
-  } else if (isNaN(Number(data.jaula_id))) {
-    errors.jaula_id = "El campo 'jaula_id' debe ser un número válido.";
+  if (data.jaula_id && isNaN(Number(data.jaula_id))) {
+    errors.jaula_id = "Jaula_id must be a valid number.";
   }
 
   if (Object.keys(errors).length > 0) {

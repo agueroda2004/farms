@@ -8,16 +8,12 @@ import { validateIdParam } from "../validators/globalValidator.js";
 
 const router = Router();
 
-// ✅
 router.post("/", validateCreateGranja, granjaController.createGranja);
 
-// ✅
 router.get("/", granjaController.listGranjas);
 
-// ✅
 router.get("/:id", validateIdParam, granjaController.getGranjaById);
 
-// ✅
 router.post(
   "/update/:id",
   validateIdParam,
@@ -25,7 +21,6 @@ router.post(
   granjaController.updateGranja
 );
 
-// ✅
 router.post("/delete/:id", validateIdParam, granjaController.deleteGranja);
 
 export default router;

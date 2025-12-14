@@ -1,7 +1,8 @@
 import prisma from "../prismaClient.js";
 
 export const createGranja = async (data) => {
-  return prisma.granja.create({ data });
+  const { nombre } = data;
+  return prisma.granja.create({ data: { nombre } });
 };
 
 export const listGranjas = async () => {
@@ -13,9 +14,14 @@ export const getGranjaById = async (id) => {
 };
 
 export const updateGranja = async (id, data) => {
-  return prisma.granja.update({ where: { id }, data });
+  const { nombre, activo } = data;
+  const granja = await prisma.granja.findUnique({ where: { id } });
+  if (!granja) {
+    throw new Error("Granja not found");
+  }
+  return prisma.granja.update({ where: { id }, data: { nombre, activo } });
 };
 
 export const deleteGranja = async (id) => {
-  return prisma.granja.delete({ where: { id: id } });
+  return prisma.granja.delete({ where: { id: Number(id) } });
 };

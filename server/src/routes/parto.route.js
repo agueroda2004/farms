@@ -1,9 +1,9 @@
-import * as controller from "../controllers/aborto.controller.js";
+import * as controller from "../controllers/partoController.js";
 import express from "express";
 import {
-  validateCreateAborto,
-  validateUpdateAborto,
-} from "../validators/abortoValidator.js";
+  validateCreateParto,
+  validateUpdateParto,
+} from "../validators/partoValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
@@ -12,37 +12,31 @@ const router = express.Router();
 router.post(
   "/",
   checkGranjaAccess,
-  validateCreateAborto,
-  controller.createAborto
+  validateCreateParto,
+  controller.createParto
 );
+
+router.get("/:id", validateIdParam, checkGranjaAccess, controller.getPartoById);
+
 router.get(
   "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.listAbortos
-);
-
-// ? Se debe mandar el granja_id para validar el acceso
-router.get(
-  "/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.getAbortoById
+  controller.listPartos
 );
 
 router.post(
   "/update/:id",
   validateIdParam,
   checkGranjaAccess,
-  validateUpdateAborto,
-  controller.updateAborto
+  validateUpdateParto,
+  controller.updateParto
 );
-
 router.post(
   "/delete/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.deleteAborto
+  controller.deleteParto
 );
 
 export default router;

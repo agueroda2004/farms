@@ -4,20 +4,18 @@ export const createAborto = async (req, res, next) => {
   try {
     const data = req.body;
 
-    const { aborto, updateCerda } = await service.createAborto(data);
-    res.status(201).json({ aborto, updateCerda });
+    const aborto = await service.createAborto(data);
+    res.status(201).json({ message: "Aborto created successfully", aborto });
   } catch (error) {
     next(error);
   }
 };
 
-export const listAbortosByGranja = async (req, res, next) => {
+export const listAbortos = async (req, res, next) => {
   try {
     const { granja_id } = req.params;
     const abortos = await service.listAbortosByGranja(Number(granja_id));
-    if (!abortos) {
-      return res.status(404).json({ error: "No hay abortos." });
-    }
+
     res.status(200).json(abortos);
   } catch (error) {
     next(error);
@@ -29,7 +27,7 @@ export const getAbortoById = async (req, res, next) => {
     const { id } = req.params;
     const aborto = await service.getAbortoById(Number(id));
     if (!aborto) {
-      return res.status(404).json({ error: "Aborto no encontrado." });
+      return res.status(404).json({ error: "Aborto not found." });
     }
     res.status(200).json(aborto);
   } catch (error) {
@@ -40,14 +38,9 @@ export const getAbortoById = async (req, res, next) => {
 export const updateAborto = async (req, res, next) => {
   try {
     const { id } = req.params;
-    const { fecha, observacion, granja_id, cerda_id } = req.body;
-    const dataToUpdate = { granja_id, cerda_id };
 
-    if (fecha !== undefined) dataToUpdate.fecha = fecha;
-    if (observacion !== undefined) dataToUpdate.observacion = observacion;
-
-    const aborto = await service.updateAborto(Number(id), dataToUpdate);
-    res.status(200).json(aborto);
+    const aborto = await service.updateAborto(Number(id), req.body);
+    res.status(201).json({ message: "Aborto updated successfully", aborto });
   } catch (error) {
     next(error);
   }
@@ -55,9 +48,11 @@ export const updateAborto = async (req, res, next) => {
 
 export const deleteAborto = async (req, res, next) => {
   try {
-    const data = req.body;
-    const { deleteAborto, updateCerda } = await service.deleteAborto(data);
-    res.status(200).json({ deleteAborto, updateCerda });
+    const { id } = req.params;
+    const deleteAborto = await service.deleteAborto(Number(id));
+    res
+      .status(201)
+      .json({ message: "Aborto deleted successfully", deleteAborto });
   } catch (error) {
     next(error);
   }

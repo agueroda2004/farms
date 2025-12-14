@@ -11,23 +11,31 @@ const router = express.Router();
 
 router.post(
   "/",
-  validateCreateBerraco,
   checkGranjaAccess,
+  validateCreateBerraco,
   controller.createBerraco
 );
 router.get(
-  "/granja/:granja_id",
+  "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.listBerracosByGranja
+  controller.listBerracos
 );
-router.get("/:id", validateIdParam, controller.getBerracoById);
+
+// ? Se debe mandar el granja_id para validar el acceso
+router.get(
+  "/:id",
+  validateIdParam,
+  checkGranjaAccess,
+  controller.getBerracoById
+);
+
 router.post(
   "/update/:id",
   validateIdParam,
+  checkGranjaAccess,
   validateUpdateBerraco,
   controller.updateBerraco
 );
-router.post("/delete/:id", validateIdParam, controller.deleteBerraco);
 
 export default router;

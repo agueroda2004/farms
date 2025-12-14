@@ -33,6 +33,7 @@ enum Causa_Removida {
 enum Rol_Operario {
   administrador
   operario
+  supervisor
 }
 
 enum Turno {
@@ -54,6 +55,7 @@ model Granja {
   berracos Berraco[]
   berracos_removidos Berraco_Removido[]
   operarios Operario[]
+  servicios Servicio[]
   montas Monta[]
   partos Parto[]
   parideras Paridera[]
@@ -91,14 +93,15 @@ model Raza {
 model Jaula {
   id Int @id @default(autoincrement())
   nombre String
-  // ! cambiar esto a activo
   activo Boolean @default(true)
+  // ? el disponible se maneja internamente
+  disponible Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   cerdas Cerda[]
   abortos Aborto[]
   berracos Berraco[]
-  montas Monta[]
+  servicios Servicio[]
   partos Parto[]
 }
 
@@ -110,7 +113,8 @@ model Cerda {
   activo Boolean @default(true)
   condicion Condicion_Cerda @default(viva)
   observacion String?
-  
+  paridera_id Int?
+  paridera Paridera? @relation(fields: [paridera_id], references: [id])
   raza_id Int
   raza Raza @relation(fields: [raza_id], references: [id])
   jaula_id Int? @unique
@@ -119,7 +123,7 @@ model Cerda {
   granja Granja @relation(fields: [granja_id], references: [id])
   cerda_Removida Cerda_Removida[]
   abortos Aborto[]
-  montas Monta[]
+  servicios Servicio[]
   partos Parto[]
   muertos Muertos[]
   destetes Destete[]
@@ -153,10 +157,12 @@ model Aborto {
   granja Granja @relation(fields: [granja_id], references: [id])
 }
 
+// !
 model Berraco {
   id Int @id @default(autoincrement())
   nombre String
   activo Boolean @default(true)
+  fecha_ingreso DateTime
   condicion Condicion_Berraco @default(vivo)
   observacion String?
   granja_id Int
@@ -194,27 +200,38 @@ model Operario {
   muertos Muertos[]
 }
 
+model Servicio {
+  id Int @id @default(autoincrement())
+  cerda_id Int //!
+  cerda Cerda @relation(fields: [cerda_id], references: [id])
+  jaula_id Int //!
+  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  granja_id Int //!
+  granja Granja @relation(fields: [granja_id], references: [id])
+  observacion String?
+  montas Monta[]
+  condicion_anterior Condicion_Cerda @default(viva)
+}
+
 model Monta {
   id Int @id @default(autoincrement())
   fecha DateTime
-  turno Turno
-  observacion String?
-  cerda_id Int
-  cerda Cerda @relation(fields: [cerda_id], references: [id])
-  berraco_id Int
+  berraco_id Int //!
   berraco Berraco @relation(fields: [berraco_id], references: [id])
-  granja_id Int
-  granja Granja @relation(fields: [granja_id], references: [id])
-  jaula_id Int
-  jaula Jaula @relation(fields: [jaula_id], references: [id])
-  operario_id Int
+  operario_id Int //!
   operario Operario @relation(fields: [operario_id], references: [id])
+  granja_id Int //!
+  granja Granja @relation(fields: [granja_id], references: [id])
+  turno Turno 
+  servicio_id Int //!
+  servicio Servicio @relation(fields: [servicio_id], references: [id])
 }
 
 model Paridera {
   id Int @id @default(autoincrement())
   nombre String
   activo Boolean @default(true)
+  disponible Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   partos Parto[]
@@ -222,10 +239,12 @@ model Paridera {
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
+  cerdas Cerda[]
 }
 
 model Parto {
   id Int @id @default(autoincrement())
+
   fecha DateTime
   total Int
   nacidos_vivos Int
@@ -244,8 +263,7 @@ model Parto {
   cerda Cerda @relation(fields: [cerda_id], references: [id])
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
-  jaula_id Int
-  jaula Jaula @relation(fields: [jaula_id], references: [id])
+  
   parto_Operarios Parto_Operario[]
   parto_Vacunas Parto_Vacuna[]
   muertos Muertos[]

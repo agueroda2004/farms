@@ -22,9 +22,7 @@ export const createUsuario = async (req, res, next) => {
 export const listUsuarios = async (req, res, next) => {
   try {
     const usuarios = await service.listUsuarios();
-    if (!usuarios || usuarios.length === 0) {
-      return res.status(404).json({ error: "No se encontraron usuarios." });
-    }
+
     res.json(usuarios);
   } catch (error) {
     next(error);

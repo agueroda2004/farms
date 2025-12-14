@@ -9,48 +9,29 @@ import { validateIdParam } from "../validators/globalValidator.js";
 
 const router = Router();
 
-// ✅
 router.post(
   "/",
-  validateCreateCerda,
   checkGranjaAccess,
+  validateCreateCerda,
   controller.createCerda
 );
 
-// ✅
 router.get(
-  "/activas/:granja_id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.listCerdasActivas
-);
-
-// ✅
-router.get(
-  "/todas/:granja_id",
+  "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
   controller.listCerdas
 );
 
-// ✅
-router.get("/:id", validateIdParam, controller.getCerdaById);
+// ? Se debe mandar el granja_id para validar el acceso
+router.get("/:id", checkGranjaAccess, validateIdParam, controller.getCerdaById);
 
-// ✅
 router.post(
   "/update/:id",
+  checkGranjaAccess,
+  validateIdParam,
   validateUpdateCerda,
-  validateIdParam,
-  checkGranjaAccess,
   controller.updateCerda
-);
-
-// ✅
-router.post(
-  "/delete/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.deleteCerda
 );
 
 export default router;

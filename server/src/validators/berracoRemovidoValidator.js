@@ -1,38 +1,40 @@
+import e from "express";
+
+const causas = ["desecho", "muerte", "sacrificio"];
+
 export function validateCreateBerracoRemovido(req, res, next) {
   const errors = {};
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido o vacío." });
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (!data.causa || String(data.causa).trim() === "") {
-    errors.causa = "El campo 'causa' es obligatorio.";
-  }
-
-  if (!data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
+    errors.causa = "The field 'causa' is required.";
+  } else if (!causas.includes(data.causa)) {
+    errors.causa = `The field 'causa' must be one of the following values: ${causas.join(
+      ", "
+    )}.`;
   }
 
   if (!data.berraco_id) {
-    errors.berraco_id = "El campo 'berraco_id' es obligatorio.";
+    errors.berraco_id = "The field 'berraco_id' is required.";
   } else if (isNaN(Number(data.berraco_id))) {
-    errors.berraco_id = "El campo 'berraco_id' debe ser un número válido.";
+    errors.berraco_id = "The field 'berraco_id' must be a valid number.";
   }
 
   if (!data.fecha || String(data.fecha).trim() === "") {
-    errors.fecha = "El campo 'fecha' es obligatorio.";
+    errors.fecha = "The field 'fecha' is required.";
   } else {
     const fecha = new Date(data.fecha);
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
 
     if (isNaN(fecha.getTime())) {
-      errors.fecha = "El formato de la fecha es inválido.";
+      errors.fecha = "The date format is invalid.";
     } else if (fecha > hoy) {
-      errors.fecha = "La fecha no puede ser una fecha futura.";
+      errors.fecha = "The date cannot be a future date.";
     }
   }
 
@@ -48,19 +50,7 @@ export function validateUpdateBerracoRemovido(req, res, next) {
   const data = req.body;
 
   if (!data || typeof data !== "object") {
-    return res.status(400).json({ error: "Payload inválido o vacío." });
-  }
-
-  if (!data.granja_id) {
-    errors.granja_id = "El campo 'granja_id' es obligatorio.";
-  } else if (isNaN(Number(data.granja_id))) {
-    errors.granja_id = "El campo 'granja_id' debe ser un número válido.";
-  }
-
-  if (!data.berraco_id) {
-    errors.berraco_id = "El campo 'berraco_id' es obligatorio.";
-  } else if (isNaN(Number(data.berraco_id))) {
-    errors.berraco_id = "El campo 'berraco_id' debe ser un número válido.";
+    return res.status(400).json({ error: "Payload invalid." });
   }
 
   if (data.fecha) {
@@ -69,9 +59,17 @@ export function validateUpdateBerracoRemovido(req, res, next) {
     hoy.setHours(0, 0, 0, 0);
 
     if (isNaN(fecha.getTime())) {
-      errors.fecha = "El formato de la fecha es inválido.";
+      errors.fecha = "The date format is invalid.";
     } else if (fecha > hoy) {
-      errors.fecha = "La fecha no puede ser una fecha futura.";
+      errors.fecha = "The date cannot be a future date.";
+    }
+  }
+
+  if (data.causa) {
+    if (!causas.includes(data.causa)) {
+      errors.causa = `The field 'causa' must be one of the following values: ${causas.join(
+        ", "
+      )}.`;
     }
   }
 

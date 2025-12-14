@@ -1,9 +1,9 @@
-import * as controller from "../controllers/cerdaRemovidaController.js";
+import * as controller from "../controllers/operarioController.js";
 import express from "express";
 import {
-  validateCreateCerdaRemovida,
-  validateUpdateCerdaRemovida,
-} from "../validators/cerdaRemovidaValidator.js";
+  validateCreateOperario,
+  validateUpdateOperario,
+} from "../validators/operarioValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
@@ -12,38 +12,32 @@ const router = express.Router();
 router.post(
   "/",
   checkGranjaAccess,
-  validateCreateCerdaRemovida,
-  controller.createCerdaRemovida
+  validateCreateOperario,
+  controller.createOperario
 );
-
 router.get(
   "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.listCerdasRemovidas
+  controller.listOperarios
 );
-
-// ? Se debe mandar el granja_id para validar el acceso
 router.get(
   "/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.getCerdaRemovidaById
+  controller.getOperarioById
 );
-
 router.post(
   "/update/:id",
   validateIdParam,
   checkGranjaAccess,
-  validateUpdateCerdaRemovida,
-  controller.updateCerdaRemovida
+  validateUpdateOperario,
+  controller.updateOperario
 );
-
 router.post(
   "/delete/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.deleteCerdaRemovida
+  controller.deleteOperario
 );
-
 export default router;

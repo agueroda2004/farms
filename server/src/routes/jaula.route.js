@@ -1,32 +1,30 @@
 import { Router } from "express";
 import * as jaulaController from "../controllers/jaulaController.js";
-import { validateJaula } from "../validators/jaulaValidator.js";
+import {
+  validateCreateJuala,
+  validateDeleteJaula,
+  validateUpdateJaula,
+} from "../validators/jaulaValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = Router();
 
-// ✅
-router.post("/", checkGranjaAccess, validateJaula, jaulaController.createJaula);
-
-// ✅
-router.get(
-  "/activas/:granja_id",
+router.post(
+  "/",
   checkGranjaAccess,
-  jaulaController.listJaulasActivas
+  validateCreateJuala,
+  jaulaController.createJaula
 );
 
-// ✅
-router.get("/todas/:granja_id", checkGranjaAccess, jaulaController.listJaulas);
-
-// ✅
 router.get(
-  "/activas/:granja_id",
+  "/all/:granja_id",
   checkGranjaAccess,
-  jaulaController.listJaulasActivas
+  validateIdParam,
+  jaulaController.listJaulas
 );
 
-// ✅
+// ? Se debe mandar el granja_id para validar el acceso
 router.get(
   "/:id",
   checkGranjaAccess,
@@ -34,20 +32,19 @@ router.get(
   jaulaController.getJaulaById
 );
 
-// ✅
 router.post(
   "/update/:id",
   checkGranjaAccess,
   validateIdParam,
-  validateJaula,
+  validateUpdateJaula,
   jaulaController.updateJaula
 );
 
-// ✅
 router.post(
   "/delete/:id",
   checkGranjaAccess,
   validateIdParam,
+  validateDeleteJaula,
   jaulaController.deleteJaula
 );
 
