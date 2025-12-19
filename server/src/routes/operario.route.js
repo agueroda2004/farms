@@ -1,4 +1,4 @@
-import * as controller from "../controllers/operarioController.js";
+import * as controller from "../controllers/operario.controller.js";
 import express from "express";
 import {
   validateCreateOperario,

@@ -18,11 +18,17 @@ export const getJaulaById = async (id) => {
 };
 
 export const updateJaula = async (id, data) => {
-  const { nombre, estado } = data;
+  const { nombre, activo } = data;
   const dataToUpdate = {};
 
+  const jaula = await prisma.jaula.findUnique({ where: { id: id } });
+
+  if (!jaula) {
+    throw new Error("Jaula not found.");
+  }
+
   if (nombre !== undefined) dataToUpdate.nombre = nombre;
-  if (estado !== undefined) dataToUpdate.estado = estado;
+  if (activo !== undefined) dataToUpdate.activo = activo;
 
   return prisma.jaula.update({
     where: { id: id },
@@ -31,41 +37,33 @@ export const updateJaula = async (id, data) => {
 };
 
 export const deleteJaula = async (id) => {
-  return prisma.jaula.delete({ where: { id: id } });
-};
-
-export const desactivarJaula = async (id, data) => {
-  const tipoAnimal = ["cerda", "berraco"];
-  const { animal } = data;
-  const jaula = await prisma.jaula.findUnique({ where: { id: id } });
+  const jaula = await prisma.jaula.findUnique({
+    where: { id },
+    include: { cerdas: true, berracos: true },
+  });
 
   if (!jaula) {
     throw new Error("Jaula not found.");
   }
 
-  if (!tipoAnimal.includes(animal)) {
-    throw new Error("Animal does not exist.");
-  }
-
-  if (animal === "cerda") {
-    const [deleteJaula, updateCerda] = await prisma.$transaction([
-      prisma.jaula.update({ where: { id: id }, data: { activo: false } }),
-      prisma.cerda.update({
+  if (jaula.cerdas.length > 0 || jaula.berracos.length > 0) {
+    const [updatedJaula] = await prisma.$transaction([
+      prisma.jaula.update({
+        where: { id },
+        data: { activo: false },
+      }),
+      prisma.cerda.updateMany({
+        where: { jaula_id: id },
+        data: { jaula_id: null },
+      }),
+      prisma.berraco.updateMany({
         where: { jaula_id: id },
         data: { jaula_id: null },
       }),
     ]);
-    return { deleteJaula, updateCerda };
+
+    return updatedJaula;
   }
 
-  if (animal === "berraco") {
-    const [deleteJaula, updateBerraco] = await prisma.$transaction([
-      prisma.jaula.update({ where: { id: id }, data: { activo: false } }),
-      prisma.berraco.update({
-        where: { jaula_id: id },
-        data: { jaula_id: null },
-      }),
-    ]);
-    return { deleteJaula, updateBerraco };
-  }
+  return prisma.jaula.delete({ where: { id } });
 };

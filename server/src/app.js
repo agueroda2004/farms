@@ -1,7 +1,7 @@
 import express from "express";
 import granjaRoutes from "./routes/granja.route.js";
 import usuarioRoutes from "./routes/usuario.route.js";
-import authRoutes from "./auth/routes/auth.js";
+import authRoutes from "./auth/routes/auth.route.js";
 import razaRoutes from "./routes/raza.route.js";
 import jaulaRoutes from "./routes/jaula.route.js";
 import cerdasRoutes from "./routes/cerda.route.js";
@@ -14,6 +14,11 @@ import servicioRoutes from "./routes/servicio.routes.js";
 import parideraRoutes from "./routes/paridera.route.js";
 import vacunaRoutes from "./routes/vacuna.routes.js";
 import partoRoutes from "./routes/parto.route.js";
+import enfermedadPreDesteteRoutes from "./routes/enfermedadPreDestete.route.js";
+import muertoPreDesteteRoutes from "./routes/muertoPreDestete.route.js";
+import adopcionesRoutes from "./routes/adopcion.route.js";
+import donacionesRoutes from "./routes/donacion.route.js";
+import destetesRoutes from "./routes/destete.route.js";
 import { handlePrismaError } from "./validators/prisma/prismaValidator.js";
 import {
   authMiddleware,
@@ -41,6 +46,12 @@ app.use("/api/operarios", operarioRoutes);
 app.use("/api/vacunas", vacunaRoutes);
 app.use("/api/parideras", parideraRoutes);
 app.use("/api/partos", partoRoutes);
+app.use("/api/enfermedad", partoRoutes);
+app.use("/api/enfermedadPreDestete", enfermedadPreDesteteRoutes);
+app.use("/api/muertoPreDestete", muertoPreDesteteRoutes);
+app.use("/api/adopciones", adopcionesRoutes);
+app.use("/api/donaciones", donacionesRoutes);
+app.use("/api/destetes", destetesRoutes);
 
 app.use("/api/usuario", usuarioRoutes);
 app.use("/api/auth", authRoutes);

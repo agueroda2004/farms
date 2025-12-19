@@ -1,4 +1,4 @@
-import * as service from "../services/usuarioService.js";
+import * as service from "../services/usuario.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createUsuario = async (req, res, next) => {

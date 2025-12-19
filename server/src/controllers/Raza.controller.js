@@ -1,4 +1,4 @@
-import * as service from "../services/razaService.js";
+import * as service from "../services/raza.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createRaza = async (req, res, next) => {

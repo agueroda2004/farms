@@ -1,4 +1,4 @@
-import * as service from "../services/berracoService.js";
+import * as service from "../services/berraco.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createBerraco = async (req, res, next) => {

@@ -1,4 +1,4 @@
-import * as controller from "../controllers/berracoController.js";
+import * as controller from "../controllers/berraco.controller.js";
 import express from "express";
 import {
   validateCreateBerraco,

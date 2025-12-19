@@ -1,4 +1,4 @@
-import * as controller from "../controllers/parideraController.js";
+import * as controller from "../controllers/paridera.controller.js";
 import express from "express";
 import {
   validateCreateParidera,

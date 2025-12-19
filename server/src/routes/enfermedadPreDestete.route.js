@@ -1,9 +1,9 @@
-import * as controller from "../controllers/berracoRemovido.controller.js";
+import * as controller from "../controllers/enfermedadPreDestete.controller.js";
 import express from "express";
 import {
-  validateCreateBerracoRemovido,
-  validateUpdateBerracoRemovido,
-} from "../validators/berracoRemovidoValidator.js";
+  validateCreateEnfermedadPreDestete,
+  validateUpdateEnfermedadPreDestete,
+} from "../validators/enfermedadPreDesteteValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
@@ -12,38 +12,34 @@ const router = express.Router();
 router.post(
   "/",
   checkGranjaAccess,
-  validateCreateBerracoRemovido,
-  controller.createBerracoRemovido
+  validateCreateEnfermedadPreDestete,
+  controller.createEnfermedadPreDestete
 );
 
-router.get(
-  "/all/:granja_id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.listBerracosRemovidos
-);
-
-// ? Se debe mandar el granja_id para validar el acceso
 router.get(
   "/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.getBerracoRemovidoById
+  controller.getEnfermedadPreDesteteById
 );
-
+router.get(
+  "/all/:granja_id",
+  validateIdParam,
+  checkGranjaAccess,
+  controller.listEnfermedadPreDestete
+);
 router.post(
   "/update/:id",
   validateIdParam,
   checkGranjaAccess,
-  validateUpdateBerracoRemovido,
-  controller.updateBerracoRemovido
+  validateUpdateEnfermedadPreDestete,
+  controller.updateEnfermedadPreDestete
 );
-
 router.post(
   "/delete/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.deleteBerracoRemovido
+  controller.deleteEnfermedadPreDestete
 );
 
 export default router;

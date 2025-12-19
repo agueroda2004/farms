@@ -1,4 +1,4 @@
-import * as service from "../services/jaulaService.js";
+import * as service from "../services/jaula.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createJaula = async (req, res, next) => {
@@ -52,24 +52,6 @@ export const deleteJaula = async (req, res, next) => {
     await service.deleteJaula(Number(id));
     res.json({ message: "Jaula deleted successfully." });
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2003"
-    ) {
-      try {
-        const jaulaDesactivada = await service.desactivarJaula(
-          Number(id),
-          req.body
-        );
-        res.json({
-          message:
-            "The jaula is associated with other records and has been deactivated instead of deleted.",
-          jaula: jaulaDesactivada,
-        });
-      } catch (updateError) {
-        return next(updateError);
-      }
-    }
     next(error);
   }
 };

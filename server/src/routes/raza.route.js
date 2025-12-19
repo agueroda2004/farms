@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as razaController from "../controllers/RazaController.js";
+import * as razaController from "../controllers/Raza.controller.js";
 import {
   validateCreateRaza,
   validateUpdateRaza,

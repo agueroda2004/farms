@@ -1,4 +1,4 @@
-import * as service from "../services/abortoService.js";
+import * as service from "../services/aborto.service.js";
 
 export const createAborto = async (req, res, next) => {
   try {

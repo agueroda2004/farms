@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as granjaController from "../controllers/granjaController.js";
+import * as granjaController from "../controllers/granja.controller.js";
 import {
   validateCreateGranja,
   validateUpdateGranja,

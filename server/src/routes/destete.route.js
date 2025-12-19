@@ -1,9 +1,9 @@
-import * as controller from "../controllers/parto.controller.js";
+import * as controller from "../controllers/destete.controller.js";
 import express from "express";
 import {
-  validateCreateParto,
-  validateUpdateParto,
-} from "../validators/partoValidator.js";
+  validateCreateDestete,
+  validateUpdateDestete,
+} from "../validators/desteteValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
@@ -12,31 +12,34 @@ const router = express.Router();
 router.post(
   "/",
   checkGranjaAccess,
-  validateCreateParto,
-  controller.createParto
+  validateCreateDestete,
+  controller.createDestete
 );
-
-router.get("/:id", validateIdParam, checkGranjaAccess, controller.getPartoById);
-
 router.get(
   "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.listPartos
+  controller.listDestetes
 );
 
+// ? Se debe mandar el granja_id para validar el acceso
+router.get(
+  "/:id",
+  validateIdParam,
+  checkGranjaAccess,
+  controller.getDesteteById
+);
 router.post(
   "/update/:id",
   validateIdParam,
   checkGranjaAccess,
-  validateUpdateParto,
-  controller.updateParto
+  validateUpdateDestete,
+  controller.updateDestete
 );
 router.post(
   "/delete/:id",
   validateIdParam,
   checkGranjaAccess,
-  controller.deleteParto
+  controller.deleteDestete
 );
-
 export default router;

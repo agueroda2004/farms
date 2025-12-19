@@ -1,5 +1,5 @@
 import { Router } from "express";
-import * as controller from "../controllers/cerdaController.js";
+import * as controller from "../controllers/cerda.controller.js";
 import {
   validateCreateCerda,
   validateUpdateCerda,

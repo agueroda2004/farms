@@ -1,4 +1,4 @@
-export * as service from "../services/berracoService.js";
+export * as service from "../services/berracoRemovido.service.js";
 
 export const createBerracoRemovido = async (req, res, next) => {
   try {

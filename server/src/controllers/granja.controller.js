@@ -1,4 +1,4 @@
-import * as service from "../services/granjaService.js";
+import * as service from "../services/granja.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createGranja = async (req, res, next) => {

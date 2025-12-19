@@ -1,4 +1,4 @@
-import * as service from "../services/cerdaRemovidaService.js";
+import * as service from "../services/cerdaRemovida.service.js";
 
 export const createCerdaRemovida = async (req, res, next) => {
   try {

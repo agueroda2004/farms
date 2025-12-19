@@ -62,8 +62,8 @@ model Granja {
   partos_Operarios Parto_Operario[]
   vacunas Vacuna[]
   partos_Vacunas Parto_Vacuna[]
-  muertos Muertos[]
-  enfermedades Enfermedad[]
+  muertos_PreDestete Muerto_PreDestete[]
+  enfermedades_PreDestete Enfermedad_PreDestete[]
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
@@ -80,15 +80,19 @@ model Usuario {
   activo Boolean @default(true)
 }
 
+
+// ! ---
 model Raza {
   id Int @id @default(autoincrement())
-  nombre String
   activo Boolean @default(true)
-  granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
+  granja_id Int
   cerdas Cerda[]
   berracos Berraco[]
+
+  nombre String
 }
+// ! ---
 
 model Jaula {
   id Int @id @default(autoincrement())
@@ -125,7 +129,7 @@ model Cerda {
   abortos Aborto[]
   servicios Servicio[]
   partos Parto[]
-  muertos Muertos[]
+  muertos_PreDestete Muerto_PreDestete[]
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
@@ -197,7 +201,7 @@ model Operario {
   granja Granja @relation(fields: [granja_id], references: [id])
   montas Monta[]
   parto_Operarios Parto_Operario[]
-  muertos Muertos[]
+  muertos_PreDestete Muerto_PreDestete[]
 }
 
 model Servicio {
@@ -235,7 +239,7 @@ model Paridera {
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   partos Parto[]
-  muertos Muertos[]
+  muertos_PreDestete Muerto_PreDestete[]
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
@@ -266,7 +270,7 @@ model Parto {
   
   parto_Operarios Parto_Operario[]
   parto_Vacunas Parto_Vacuna[]
-  muertos Muertos[]
+  muertos_PreDestete Muerto_PreDestete[]
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
@@ -303,17 +307,17 @@ model Parto_Vacuna {
   granja Granja @relation(fields: [granja_id], references: [id])
 }
 
-model Enfermedad {
+model Enfermedad_PreDestete {
   id Int @id @default(autoincrement())
   nombre String
   observacion String?
   activo Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
-  muertos Muertos[]
+  muertos_PreDestete Muerto_PreDestete[]
 }
 
-model Muertos {
+model Muerto_PreDestete {
   id Int @id @default(autoincrement())
   fecha DateTime
   cantidad Int
@@ -324,9 +328,9 @@ model Muertos {
   paridera_id Int
   paridera Paridera @relation(fields: [paridera_id], references: [id])
   operario_id Int
-  operario Operario @relation(fields: [operario_id], references: [id])
-  enfermedad_id Int
-  enfermedad Enfermedad @relation(fields: [enfermedad_id], references: [id])
+  operarios Operario @relation(fields: [operario_id], references: [id])
+  enfermedad_PreDestete_id Int
+  enfermedad_PreDestete Enfermedad_PreDestete @relation(fields: [enfermedad_PreDestete_id], references: [id])
   cerda_id Int
   cerda Cerda @relation(fields: [cerda_id], references: [id])
   parto_id Int?

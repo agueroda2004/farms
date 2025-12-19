@@ -1,4 +1,4 @@
-import * as service from "../services/cerdaService.js";
+import * as service from "../services/cerda.service.js";
 import { Prisma } from "@prisma/client";
 
 export const createCerda = async (req, res, next) => {

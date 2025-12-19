@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-import * as service from "../services/parideraService.js";
+import * as service from "../services/paridera.service.js";
 
 export const createParidera = async (req, res, next) => {
   try {

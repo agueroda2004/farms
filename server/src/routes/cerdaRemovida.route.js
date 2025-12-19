@@ -1,4 +1,4 @@
-import * as controller from "../controllers/cerdaRemovidaController.js";
+import * as controller from "../controllers/cerdaRemovida.controller.js";
 import express from "express";
 import {
   validateCreateCerdaRemovida,

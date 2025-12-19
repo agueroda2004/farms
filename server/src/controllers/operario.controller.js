@@ -1,5 +1,5 @@
 import { Prisma } from "@prisma/client";
-export * as service from "../services/operarioService.js";
+export * as service from "../services/operario.service.js";
 
 export const createOperario = async (req, res, next) => {
   try {

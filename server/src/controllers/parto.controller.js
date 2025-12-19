@@ -1,4 +1,4 @@
-import * as service from "../services/partoservice.js";
+import * as service from "../services/parto.service.js";
 
 export const createParto = async (req, res, next) => {
   try {

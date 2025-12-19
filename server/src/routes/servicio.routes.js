@@ -1,5 +1,5 @@
 import e from "express";
-import * as controller from "../controllers/servicioController.js";
+import * as controller from "../controllers/servicio.controller.js";
 import express from "express";
 import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 import { validateIdParam } from "../validators/globalValidator.js";

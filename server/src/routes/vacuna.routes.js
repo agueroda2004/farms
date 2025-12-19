@@ -1,4 +1,4 @@
-import * as controller from "../controllers/vacunaController.js";
+import * as controller from "../controllers/vacuna.controller.js";
 import express from "express";
 import {
   validateCreateVacuna,
@@ -20,7 +20,7 @@ router.get(
   "/all/:granja_id",
   validateIdParam,
   checkGranjaAccess,
-  controller.getVacunas
+  controller.listVacunas
 );
 
 // ? Se debe mandar el granja_id para validar el acceso

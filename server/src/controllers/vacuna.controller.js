@@ -1,4 +1,4 @@
-import * as service from "../services/vacunaService.js";
+import * as service from "../services/vacuna.service.js";
 
 export const createVacuna = async (req, res, next) => {
   try {

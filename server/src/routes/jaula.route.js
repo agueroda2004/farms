@@ -1,8 +1,7 @@
 import { Router } from "express";
-import * as jaulaController from "../controllers/jaulaController.js";
+import * as jaulaController from "../controllers/jaula.controller.js";
 import {
   validateCreateJuala,
-  validateDeleteJaula,
   validateUpdateJaula,
 } from "../validators/jaulaValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
@@ -40,11 +39,12 @@ router.post(
   jaulaController.updateJaula
 );
 
+// ? Se debe mandar el granja_id para validar el acceso
+// ? Se debe mandar en el body el animal (cerda o berraco) para desactivar la jaula
 router.post(
   "/delete/:id",
   checkGranjaAccess,
   validateIdParam,
-  validateDeleteJaula,
   jaulaController.deleteJaula
 );
 
