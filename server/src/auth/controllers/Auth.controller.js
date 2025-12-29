@@ -7,7 +7,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 
 // ! validar si email y password no vienen vacios
 export const login = async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, lang } = req.body;
   try {
     const user = await service.getUsuarioByEmail(email);
     if (!user) {
@@ -24,6 +24,7 @@ export const login = async (req, res) => {
         email: user.email,
         admin: user.admin,
         granja_id: user.granja_id,
+        lang: lang || "es",
       },
       JWT_SECRET,
       { expiresIn: "3h" }

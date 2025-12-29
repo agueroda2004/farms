@@ -1,21 +1,15 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
 const condicionesValidas = ["destetada", "viva", "aborto"];
 
-export const createServicio = async (data) => {
-  const { cerda_id, jaula_id, granja_id, observacion, montas } = data;
+export const createServicio = async (data, granja_id) => {
+  const { cerda_id, jaula_id, observacion, montas } = data;
 
-  const cerda = await prisma.cerda.findUnique({ where: { id: cerda_id } });
-
-  if (!condicionesValidas.includes(cerda.condicion)) {
-    throw new Error("Cerda condition is not valid for service creation.");
-  }
-
-  const jaula = await prisma.jaula.findUnique({ where: { id: jaula_id } });
-
-  if (!jaula.disponible) {
-    throw new Error("Jaula is not available.");
-  }
+  const cerda = await validateCerda(cerda_id, granja_id);
+  await validateJaula(jaula_id, granja_id);
+  await validateBerracos(montas, granja_id);
+  await validateOperarios(montas, granja_id);
 
   const [servicio, ..._] = await prisma.$transaction([
     prisma.servicio.create({
@@ -52,19 +46,20 @@ export const createServicio = async (data) => {
   return servicio;
 };
 
-export const updateServicio = async (id, data) => {
+export const updateServicio = async (id, granja_id, data) => {
   const { jaula_id, observacion, montas } = data;
   const servicioUpdateData = {};
-  const servicio = await prisma.servicio.findUnique({ where: { id } });
-  if (!servicio) {
-    throw new Error("Servicio not found.");
-  }
+
+  const servicio = await validateServicio(id, granja_id);
 
   if (observacion !== undefined) {
     servicioUpdateData.observacion = observacion;
   }
 
-  if (montas && Array.isArray(montas)) {
+  if (montas !== undefined && Array.isArray(montas)) {
+    await validateBerracos(montas, granja_id);
+    await validateOperarios(montas, granja_id);
+
     servicioUpdateData.montas = {
       deleteMany: { servicio_id: id },
       create: montas.map((monta) => ({
@@ -78,14 +73,8 @@ export const updateServicio = async (id, data) => {
     };
   }
 
-  if (jaula_id) {
-    const jaula = await prisma.jaula.findUnique({
-      where: { id: jaula_id },
-    });
-
-    if (!jaula || !jaula.disponible) {
-      throw new Error("La nueva jaula no está disponible.");
-    }
+  if (jaula_id !== undefined) {
+    await validateJaula(jaula_id, granja_id);
 
     servicioUpdateData.jaula = { connect: { id: jaula_id } };
 
@@ -114,9 +103,9 @@ export const updateServicio = async (id, data) => {
   }
 };
 
-export const getServicioById = async (id) => {
-  return prisma.servicio.findUnique({
-    where: { id },
+export const getServicioById = async (id, granja_id) => {
+  return prisma.servicio.findFirst({
+    where: { id, granja_id },
     include: { montas: true },
   });
 };
@@ -128,11 +117,8 @@ export const listServicios = async (granja_id) => {
   });
 };
 
-export const deleteServicio = async (id) => {
-  const servicio = await prisma.servicio.findUnique({ where: { id } });
-  if (!servicio) {
-    throw new Error("Servicio not found.");
-  }
+export const deleteServicio = async (id, granja_id) => {
+  const servicio = await validateServicio(id, granja_id);
 
   const [deletedServicio, ..._] = await prisma.$transaction([
     prisma.servicio.delete({ where: { id } }),
@@ -146,4 +132,62 @@ export const deleteServicio = async (id) => {
     }),
   ]);
   return deletedServicio;
+};
+
+const validateCerda = async (cerda_id, granja_id) => {
+  const cerda = await prisma.cerda.findFirst({
+    where: { id: cerda_id, granja_id, activo: true },
+  });
+  if (!cerda) {
+    throw new AppError("CERDA_NOT_FOUND", 404);
+  }
+  if (!condicionesValidas.includes(cerda.condicion)) {
+    throw new AppError("CERDA_CONDICION_INVALIDA", 400);
+  }
+  return cerda;
+};
+
+const validateJaula = async (jaula_id, granja_id) => {
+  const jaula = await prisma.jaula.findFirst({
+    where: { id: jaula_id, granja_id, activo: true },
+  });
+  if (!jaula) {
+    throw new AppError("JAULA_NOT_FOUND", 404);
+  }
+  if (!jaula.disponible) {
+    throw new AppError("JAULA_NOT_AVAILABLE", 400);
+  }
+  return jaula;
+};
+
+const validateBerracos = async (montas, granja_id) => {
+  for (const monta of montas) {
+    const berraco = await prisma.berraco.findFirst({
+      where: { id: monta.berraco_id, granja_id, activo: true },
+    });
+    if (!berraco) {
+      throw new AppError("BERRACO_NOT_FOUND", 404);
+    }
+  }
+};
+
+const validateOperarios = async (montas, granja_id) => {
+  for (const monta of montas) {
+    const operario = await prisma.operario.findFirst({
+      where: { id: monta.operario_id, granja_id, activo: true },
+    });
+    if (!operario) {
+      throw new AppError("OPERARIO_NOT_FOUND", 404);
+    }
+  }
+};
+
+const validateServicio = async (servicio_id, granja_id) => {
+  const servicio = await prisma.servicio.findFirst({
+    where: { id: servicio_id, granja_id },
+  });
+  if (!servicio) {
+    throw new AppError("SERVICIO_NOT_FOUND", 404);
+  }
+  return servicio;
 };

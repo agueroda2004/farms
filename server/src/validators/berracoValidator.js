@@ -1,3 +1,5 @@
+import { validateFecha } from "../utils/dateValidator.js";
+
 export function validateCreateBerraco(req, res, next) {
   const errors = {};
   const data = req.body;
@@ -22,19 +24,7 @@ export function validateCreateBerraco(req, res, next) {
     errors.jaula_id = "Jaula_id field must be a valid number.";
   }
 
-  if (!data.fecha_ingreso || String(data.fecha_ingreso).trim() === "") {
-    errors.fecha_ingreso = "Fecha_ingreso is required.";
-  } else {
-    const fechaIngreso = new Date(data.fecha_ingreso);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fechaIngreso.getTime())) {
-      errors.fecha_ingreso = "Fecha_ingreso format is invalid.";
-    } else if (fechaIngreso > hoy) {
-      errors.fecha_ingreso = "Fecha_ingreso cannot be a future date.";
-    }
-  }
+  validateFecha(data.fecha, errors);
 
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ errors });
@@ -56,6 +46,14 @@ export function validateUpdateBerraco(req, res, next) {
 
   if (data.jaula_id && isNaN(Number(data.jaula_id))) {
     errors.jaula_id = "Jaula_id must be a valid number.";
+  }
+
+  if (data.fecha) {
+    validateFecha(data.fecha, errors);
+  }
+
+  if (data.activo !== undefined && typeof data.activo !== "boolean") {
+    errors.activo = "Activo must be a boolean value.";
   }
 
   if (Object.keys(errors).length > 0) {

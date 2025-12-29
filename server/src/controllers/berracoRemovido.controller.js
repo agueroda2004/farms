@@ -1,13 +1,13 @@
 export * as service from "../services/berracoRemovido.service.js";
+import { successResponse } from "../utils/response.js";
 
 export const createBerracoRemovido = async (req, res, next) => {
   try {
-    const data = req.body;
-    const berracoRemovido = await service.createBerracoRemovido(data);
-    res.status(201).json({
-      message: "Berraco removido created successfully.",
-      berracoRemovido,
-    });
+    const berracoRemovido = await service.createBerracoRemovido(
+      req.body,
+      req.user.granja_id
+    );
+    successResponse(res, req, 201, "BERRACO_REMOVIDO_CREATED", berracoRemovido);
   } catch (error) {
     next(error);
   }
@@ -15,12 +15,17 @@ export const createBerracoRemovido = async (req, res, next) => {
 
 export const listBerracosRemovidos = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
     const berracosRemovidos = await service.listBerracosRemovidos(
-      Number(granja_id)
+      Number(req.user.granja_id)
     );
 
-    res.json(berracosRemovidos);
+    successResponse(
+      res,
+      req,
+      200,
+      "BERRACO_REMOVIDO_LISTED",
+      berracosRemovidos
+    );
   } catch (error) {
     next(error);
   }
@@ -28,12 +33,11 @@ export const listBerracosRemovidos = async (req, res, next) => {
 
 export const getBerracoRemovidoById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const berracoRemovido = await service.getBerracoById(Number(id));
-    if (!berracoRemovido) {
-      return res.status(404).json({ error: "Berraco removido not found." });
-    }
-    res.json(berracoRemovido);
+    const berracoRemovido = await service.getBerracoRemovidoById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 200, "BERRACO_REMOVIDO_FETCHED", berracoRemovido);
   } catch (error) {
     next(error);
   }
@@ -41,17 +45,19 @@ export const getBerracoRemovidoById = async (req, res, next) => {
 
 export const updateBerracoRemovido = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
     const updatedBerracoRemovido = await service.updateBerracoRemovido(
-      Number(id),
+      Number(req.params.id),
+      Number(req.user.granja_id),
       req.body
     );
 
-    res.status(201).json({
-      message: "Berraco removido updated successfully.",
-      updatedBerracoRemovido,
-    });
+    successResponse(
+      res,
+      req,
+      201,
+      "BERRACO_REMOVIDO_UPDATED",
+      updatedBerracoRemovido
+    );
   } catch (error) {
     next(error);
   }
@@ -59,14 +65,17 @@ export const updateBerracoRemovido = async (req, res, next) => {
 
 export const deleteBerracoRemovido = async (req, res, next) => {
   try {
-    const { id } = req.params;
     const deletedBerracoRemovido = await service.deleteBerracoRemovido(
-      Number(id)
+      Number(req.params.id),
+      Number(req.user.granja_id)
     );
-    res.status(201).json({
-      message: "Berraco removido deleted successfully.",
-      deletedBerracoRemovido,
-    });
+    successResponse(
+      res,
+      req,
+      200,
+      "BERRACO_REMOVIDO_DELETED",
+      deletedBerracoRemovido
+    );
   } catch (error) {
     next(error);
   }

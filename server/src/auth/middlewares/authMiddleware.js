@@ -30,12 +30,7 @@ export const checkGranjaAccess = async (req, res, next) => {
     }
 
     // 2. Obtener el ID de la granja de la solicitud (de params o body)
-    let requestGranjaId;
-    if (req.params.granja_id) {
-      requestGranjaId = req.params.granja_id;
-    } else if (req.body.granja_id) {
-      requestGranjaId = req.body.granja_id;
-    }
+    let requestGranjaId = req.user.granja_id; // Default al granja_id del usuario
 
     if (!requestGranjaId) {
       return res.status(400).json({

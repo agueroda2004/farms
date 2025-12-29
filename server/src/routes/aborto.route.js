@@ -5,44 +5,21 @@ import {
   validateUpdateAborto,
 } from "../validators/abortoValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
-import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
-  checkGranjaAccess,
-  validateCreateAborto,
-  controller.createAborto
-);
-router.get(
-  "/all/:granja_id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.listAbortos
-);
+router.post("/", validateCreateAborto, controller.createAborto);
+router.get("/", controller.listAbortos);
 
-// ? Se debe mandar el granja_id para validar el acceso
-router.get(
-  "/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.getAbortoById
-);
+router.get("/:id", validateIdParam, controller.getAbortoById);
 
 router.post(
   "/update/:id",
   validateIdParam,
-  checkGranjaAccess,
   validateUpdateAborto,
   controller.updateAborto
 );
 
-router.post(
-  "/delete/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.deleteAborto
-);
+router.post("/delete/:id", validateIdParam, controller.deleteAborto);
 
 export default router;

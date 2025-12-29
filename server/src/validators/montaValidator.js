@@ -1,3 +1,4 @@
+import { validateFecha } from "../utils/dateValidator.js";
 const turnos = ["Mañana", "Tarde", "Noche"];
 
 export const validateCreateMonta = (montas, errors) => {
@@ -27,19 +28,7 @@ export const validateCreateMonta = (montas, errors) => {
         "Operario_id field must be a valid number.";
     }
 
-    if (!monta.fecha || String(monta.fecha).trim() === "") {
-      errors.fecha = "The field 'fecha' is required.";
-    } else {
-      const fecha = new Date(monta.fecha);
-      const hoy = new Date();
-      hoy.setHours(0, 0, 0, 0);
-
-      if (isNaN(fecha.getTime())) {
-        errors.fecha = "The date format is invalid.";
-      } else if (fecha > hoy) {
-        errors.fecha = "The date cannot be a future date.";
-      }
-    }
+    validateFecha(monta.fecha, errors);
 
     if (!monta.turno) {
       errors[`montas[${index}].turno`] = "Turno field is required.";

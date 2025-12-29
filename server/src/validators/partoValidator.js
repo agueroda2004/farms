@@ -1,4 +1,6 @@
+import { validateFecha } from "../utils/dateValidator.js";
 const turnos = ["Mañana", "Tarde", "Noche"];
+
 export const validateCreateParto = (req, res, next) => {
   const errors = {};
   const data = req.body;
@@ -50,10 +52,6 @@ export const validateCreateParto = (req, res, next) => {
     errors.paridera_id = "Paridera ID must be a valid number.";
   }
 
-  if (!data.turno || data.turno.trim() === "") {
-    errors.turno = "Turno field is required.";
-  }
-
   if (!data.hora_inicio || data.hora_inicio.trim() === "") {
     errors.hora_inicio = "Hora de inicio field is required.";
   }
@@ -88,19 +86,7 @@ export const validateCreateParto = (req, res, next) => {
     });
   }
 
-  if (!data.fecha || String(data.fecha).trim() === "") {
-    errors.fecha = "Fecha field is required.";
-  } else {
-    const fecha = new Date(data.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
-      errors.fecha = "Fecha format is invalid.";
-    } else if (fecha > hoy) {
-      errors.fecha = "Fecha cannot be a future date.";
-    }
-  }
+  validateFecha(data.fecha, errors);
 
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ errors });
@@ -175,16 +161,8 @@ export const validateUpdateParto = (req, res, next) => {
     }
   }
 
-  if (data.fecha || String(data.fecha).trim() === "") {
-    const fecha = new Date(data.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
-      errors.fecha = "Fecha format is invalid.";
-    } else if (fecha > hoy) {
-      errors.fecha = "Fecha cannot be a future date.";
-    }
+  if (data.fecha) {
+    validateFecha(data.fecha, errors);
   }
 
   if (Object.keys(errors).length > 0) {

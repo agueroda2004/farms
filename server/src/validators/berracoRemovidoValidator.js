@@ -1,4 +1,4 @@
-import e from "express";
+import { validateFecha } from "../utils/dateValidator.js";
 
 const causas = ["desecho", "muerte", "sacrificio"];
 
@@ -24,19 +24,7 @@ export function validateCreateBerracoRemovido(req, res, next) {
     errors.berraco_id = "The field 'berraco_id' must be a valid number.";
   }
 
-  if (!data.fecha || String(data.fecha).trim() === "") {
-    errors.fecha = "The field 'fecha' is required.";
-  } else {
-    const fecha = new Date(data.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
-      errors.fecha = "The date format is invalid.";
-    } else if (fecha > hoy) {
-      errors.fecha = "The date cannot be a future date.";
-    }
-  }
+  validateFecha(data.fecha, errors);
 
   if (Object.keys(errors).length > 0) {
     return res.status(400).json({ errors });
@@ -54,15 +42,7 @@ export function validateUpdateBerracoRemovido(req, res, next) {
   }
 
   if (data.fecha) {
-    const fecha = new Date(data.fecha);
-    const hoy = new Date();
-    hoy.setHours(0, 0, 0, 0);
-
-    if (isNaN(fecha.getTime())) {
-      errors.fecha = "The date format is invalid.";
-    } else if (fecha > hoy) {
-      errors.fecha = "The date cannot be a future date.";
-    }
+    validateFecha(data.fecha, errors);
   }
 
   if (data.causa) {

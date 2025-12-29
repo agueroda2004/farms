@@ -1,13 +1,10 @@
 import * as service from "../services/cerda.service.js";
-import { Prisma } from "@prisma/client";
+import { successResponse } from "../utils/response.js";
 
 export const createCerda = async (req, res, next) => {
   try {
-    const cerda = await service.createCerda(req.body);
-    res.status(201).json({
-      message: `Cerda created successfully.`,
-      cerda,
-    });
+    const cerda = await service.createCerda(req.body, req.user.granja_id);
+    successResponse(res, req, 200, "CERDA_CREATED", cerda);
   } catch (error) {
     next(error);
   }
@@ -15,10 +12,8 @@ export const createCerda = async (req, res, next) => {
 
 export const listCerdas = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const cerdas = await service.listCerdas(Number(granja_id));
-
-    res.json(cerdas);
+    const cerdas = await service.listCerdas(Number(req.user.granja_id));
+    successResponse(res, req, 200, "CERDAS_LISTED", cerdas);
   } catch (error) {
     next(error);
   }
@@ -26,11 +21,11 @@ export const listCerdas = async (req, res, next) => {
 
 export const getCerdaById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const cerda = await service.getCerdaById(Number(id));
-    if (!cerda) return res.status(404).json({ error: "Cerda not found." });
-
-    res.json(cerda);
+    const cerda = await service.getCerdaById(
+      Number(req.params.id),
+      req.user.granja_id
+    );
+    successResponse(res, req, 200, "CERDA_FETCHED", cerda);
   } catch (error) {
     next(error);
   }
@@ -38,13 +33,12 @@ export const getCerdaById = async (req, res, next) => {
 
 export const updateCerda = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    const cerda = await service.updateCerda(Number(id), req.body);
-    res.json({
-      message: `Cerda updated successfully.`,
-      cerda,
-    });
+    const cerda = await service.updateCerda(
+      Number(req.params.id),
+      req.user.granja_id,
+      req.body
+    );
+    successResponse(res, req, 200, "CERDA_UPDATED", cerda);
   } catch (error) {
     next(error);
   }

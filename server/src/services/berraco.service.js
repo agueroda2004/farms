@@ -1,42 +1,18 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
-export const createBerraco = async (data) => {
-  const { nombre, observacion, granja_id, raza_id, jaula_id, fecha_ingreso } =
-    data;
+export const createBerraco = async (data, granja_id) => {
+  const { nombre, observacion, raza_id, jaula_id, fecha } = data;
 
-  const jaula = await prisma.jaula.findUnique({
-    where: { id: Number(jaula_id), activo: true },
-  });
-
-  const existingBerraco = await prisma.berraco.findUnique({
-    where: { nombre: nombre, granja_id: Number(granja_id) },
-  });
-
-  if (existingBerraco) {
-    throw new Error("Berraco with this nombre already exists.");
-  }
-
-  if (!jaula) {
-    throw new Error("Jaula not found.");
-  }
-
-  if (!jaula.disponible) {
-    throw new Error("Jaula is not available.");
-  }
-
-  const raza = await prisma.raza.findUnique({
-    where: { id: Number(raza_id), activo: true },
-  });
-
-  if (!raza) {
-    throw new Error("Raza not found.");
-  }
+  await validateJaula(jaula_id, granja_id);
+  await validateBerracoName(nombre, granja_id);
+  await validateRaza(raza_id, granja_id);
 
   const berraco = await prisma.berraco.create({
     data: {
       nombre,
+      fecha_ingreso: fecha,
       observacion,
-      fecha_ingreso,
       granja: { connect: { id: Number(granja_id) } },
       raza: { connect: { id: Number(raza_id) } },
       jaula: { connect: { id: Number(jaula_id) } },
@@ -47,66 +23,92 @@ export const createBerraco = async (data) => {
 
 export const listBerracos = async (granja_id) => {
   return await prisma.berraco.findMany({
-    where: { granja_id: granja_id },
+    where: { granja_id: Number(granja_id) },
   });
 };
 
-export const getBerracoById = async (id) => {
-  return await prisma.berraco.findUnique({ where: { id: id } });
+export const getBerracoById = async (id, granja_id) => {
+  return await validateBerracoExists(id, granja_id);
 };
 
-export const updateBerraco = async (id, data) => {
-  const { activo, fecha_ingreso, observacion, jaula_id, raza_id } = data;
+export const updateBerraco = async (id, granja_id, data) => {
+  const { activo, fecha, observacion, jaula_id, raza_id } = data;
   const dataToUpdate = {};
 
-  const berraco = await prisma.berraco.findUnique({
-    where: { id: id },
-  });
-
-  if (!berraco) {
-    throw new Error("Berraco not found.");
-  }
+  await validateBerracoExists(id, granja_id);
 
   if (activo !== undefined) dataToUpdate.activo = activo;
-  if (fecha_ingreso !== undefined) {
-    const monta = await prisma.monta.findMany({
-      where: {
-        berraco_id: id,
-      },
-      take: 1,
-      orderBy: { fecha: "desc" },
-    });
 
-    if (monta.fecha < fecha_ingreso) {
-      throw new Error(
-        "Cannot set fecha_ingreso later than the latest monta date."
-      );
-    }
+  if (fecha !== undefined) {
+    await validateMontaDates(id, fecha);
 
-    dataToUpdate.fecha_ingreso = fecha_ingreso;
+    dataToUpdate.fecha_ingreso = fecha;
   }
   if (observacion !== undefined) dataToUpdate.observacion = observacion;
+
   if (jaula_id !== undefined) {
-    const jaula = await prisma.jaula.findUnique({
-      where: { id: Number(jaula_id), activo: true },
-    });
-    if (!jaula) {
-      throw new Error("Jaula not found.");
-    }
-    if (!jaula.disponible) {
-      throw new Error("Jaula is not available.");
-    }
+    await validateJaula(jaula_id, granja_id);
     dataToUpdate.jaula = { connect: { id: Number(jaula_id) } };
   }
   if (raza_id !== undefined) {
-    const raza = await prisma.raza.findUnique({
-      where: { id: Number(raza_id), activo: true },
-    });
-    if (!raza) {
-      throw new Error("Raza not found.");
-    }
+    await validateRaza(raza_id, granja_id);
     dataToUpdate.raza = { connect: { id: Number(raza_id) } };
   }
 
   return await prisma.berraco.update({ where: { id: id }, data: dataToUpdate });
+};
+
+const validateJaula = async (jaula_id, granja_id) => {
+  const jaula = await prisma.jaula.findFirst({
+    where: { id: Number(jaula_id), activo: true, granja_id: Number(granja_id) },
+  });
+  if (!jaula) {
+    throw new AppError("JAULA_NOT_FOUND", 404);
+  }
+  if (!jaula.disponible) {
+    throw new AppError("JAULA_NOT_AVAILABLE", 400);
+  }
+  return jaula;
+};
+
+const validateRaza = async (raza_id, granja_id) => {
+  const raza = await prisma.raza.findFirst({
+    where: { id: Number(raza_id), activo: true, granja_id: Number(granja_id) },
+  });
+  if (!raza) {
+    throw new AppError("RAZA_NOT_FOUND", 404);
+  }
+  return raza;
+};
+
+const validateBerracoName = async (nombre, granja_id) => {
+  const existingBerraco = await prisma.berraco.findFirst({
+    where: { nombre: nombre, granja_id: Number(granja_id) },
+  });
+  if (existingBerraco) {
+    throw new AppError("BERRACO_NAME_EXISTS", 400);
+  }
+  return existingBerraco;
+};
+
+const validateBerracoExists = async (id, granja_id) => {
+  const berraco = await prisma.berraco.findFirst({
+    where: { id: id, granja_id: Number(granja_id), activo: true },
+  });
+  if (!berraco) {
+    throw new AppError("BERRACO_NOT_FOUND", 404);
+  }
+  return berraco;
+};
+
+const validateMontaDates = async (id, fecha) => {
+  const montas = await prisma.monta.findMany({
+    where: { berraco_id: id },
+    orderBy: { fecha: "desc" },
+    take: 1,
+  });
+  if (montas.length > 0 && montas[0].fecha < fecha_ingreso) {
+    throw new AppError("BERRACO_DATE_INVALID", 400);
+  }
+  return true;
 };

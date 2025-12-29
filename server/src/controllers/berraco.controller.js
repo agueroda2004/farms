@@ -1,11 +1,10 @@
 import * as service from "../services/berraco.service.js";
-import { Prisma } from "@prisma/client";
+import { successResponse } from "../utils/response.js";
 
 export const createBerraco = async (req, res, next) => {
   try {
-    const data = req.body;
-    const berraco = await service.createBerraco(data);
-    res.status(201).json({ message: "Berraco created successfully", berraco });
+    const berraco = await service.createBerraco(req.body, req.params.granja_id);
+    successResponse(res, req, 201, "BERRACO_CREATED", berraco);
   } catch (error) {
     next(error);
   }
@@ -13,10 +12,8 @@ export const createBerraco = async (req, res, next) => {
 
 export const listBerracos = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const berracos = await service.listBerracos(Number(granja_id));
-
-    res.status(200).json(berracos);
+    const berracos = await service.listBerracos(Number(req.user.granja_id));
+    successResponse(res, req, 200, "BERRACOS_LISTED", berracos);
   } catch (error) {
     next(error);
   }
@@ -24,12 +21,11 @@ export const listBerracos = async (req, res, next) => {
 
 export const getBerracoById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const berraco = await service.getBerracoById(Number(id));
-    if (!berraco) {
-      return res.status(404).json({ error: "Berraco not found." });
-    }
-    res.status(200).json(berraco);
+    const berraco = await service.getBerracoById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 200, "BERRACO_FETCHED", berraco);
   } catch (error) {
     next(error);
   }
@@ -37,12 +33,12 @@ export const getBerracoById = async (req, res, next) => {
 
 export const updateBerraco = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    const updatedBerraco = await service.updateBerraco(Number(id), req.body);
-    res
-      .status(201)
-      .json({ message: "Berraco updated successfully", updatedBerraco });
+    const updatedBerraco = await service.updateBerraco(
+      Number(req.params.id),
+      Number(req.user.granja_id),
+      req.body
+    );
+    successResponse(res, req, 201, "BERRACO_UPDATED", updatedBerraco);
   } catch (error) {
     next(error);
   }

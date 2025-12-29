@@ -24,6 +24,7 @@ import {
   authMiddleware,
   checkGranjaAccess,
 } from "./auth/middlewares/authMiddleware.js";
+import { errorHandler } from "./middlewares/errorHandler.js";
 
 const app = express();
 
@@ -56,12 +57,7 @@ app.use("/api/destetes", destetesRoutes);
 app.use("/api/usuario", usuarioRoutes);
 app.use("/api/auth", authRoutes);
 
-// Manejo básico de errores (middleware)
 app.use(handlePrismaError);
-
-app.use((err, req, res, next) => {
-  console.error(err);
-  res.status(err.status || 500).json({ error: err.message || "Server error" });
-});
+app.use(errorHandler);
 
 export default app;

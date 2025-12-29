@@ -5,6 +5,7 @@ export function validateCreateJuala(req, res, next) {
   if (!data || typeof data !== "object") {
     return res.status(400).json({ error: "Payload inválido." });
   }
+
   if (!data.nombre || String(data.nombre).trim() === "") {
     errors.nombre = "Nombre field is required.";
   }

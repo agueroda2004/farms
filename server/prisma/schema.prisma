@@ -200,7 +200,7 @@ model Operario {
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   montas Monta[]
-  parto_Operarios Parto_Operario[]
+  partos Parto[]
   muertos_PreDestete Muerto_PreDestete[]
 }
 
@@ -268,22 +268,12 @@ model Parto {
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
   
-  parto_Operarios Parto_Operario[]
-  parto_Vacunas Parto_Vacuna[]
+  operarios Operario[]
+  vacunas Vacuna[]
   muertos_PreDestete Muerto_PreDestete[]
   destetes Destete[]
   adopciones Adopcion[]
   donaciones Donacion[]
-}
-
-model Parto_Operario {
-  id Int @id @default(autoincrement())
-  parto_id Int
-  parto Parto @relation(fields: [parto_id], references: [id])
-  operario_id Int
-  operario Operario @relation(fields: [operario_id], references: [id])
-  granja_id Int
-  granja Granja @relation(fields: [granja_id], references: [id])
 }
 
 model Vacuna {
@@ -294,17 +284,7 @@ model Vacuna {
   activo Boolean @default(true)
   granja_id Int
   granja Granja @relation(fields: [granja_id], references: [id])
-  partos_Vacunas Parto_Vacuna[]
-}
-
-model Parto_Vacuna {
-  id Int @id @default(autoincrement())
-  parto_id Int
-  parto Parto @relation(fields: [parto_id], references: [id])
-  vacuna_id Int
-  vacuna Vacuna @relation(fields: [vacuna_id], references: [id])
-  granja_id Int
-  granja Granja @relation(fields: [granja_id], references: [id])
+  partos Parto[]
 }
 
 model Enfermedad_PreDestete {

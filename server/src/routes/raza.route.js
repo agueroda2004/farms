@@ -1,49 +1,26 @@
 import { Router } from "express";
-import * as razaController from "../controllers/Raza.controller.js";
+import * as razaController from "../controllers/raza.controller.js";
 import {
   validateCreateRaza,
   validateUpdateRaza,
 } from "../validators/razaValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
-import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = Router();
 
-router.post(
-  "/",
-  checkGranjaAccess,
-  validateCreateRaza,
-  razaController.createRaza
-);
+router.post("/", validateCreateRaza, razaController.createRaza);
 
-router.get(
-  "/all/:granja_id",
-  validateIdParam,
-  checkGranjaAccess,
-  razaController.listRazas
-);
+router.get("/", razaController.listRazas);
 
-// ? Se debe mandar el granja_id para validar el acceso
-router.get(
-  "/:id",
-  checkGranjaAccess,
-  validateIdParam,
-  razaController.getRazaById
-);
+router.get("/:id", validateIdParam, razaController.getRazaById);
 
 router.post(
   "/update/:id",
-  checkGranjaAccess,
   validateIdParam,
   validateUpdateRaza,
   razaController.updateRaza
 );
 
-router.post(
-  "/delete/:id",
-  checkGranjaAccess,
-  validateIdParam,
-  razaController.deleteRaza
-);
+router.post("/delete/:id", validateIdParam, razaController.deleteRaza);
 
 export default router;

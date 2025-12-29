@@ -1,6 +1,7 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
-export const createParto = async (data) => {
+export const createParto = async (data, granja_id) => {
   const {
     cerda_id,
     vivos,
@@ -15,72 +16,27 @@ export const createParto = async (data) => {
     duracion,
     manipulada,
     observacion,
-    granja_id,
     vacunas,
     operarios,
   } = data;
 
-  const ultimoServicio = await prisma.servicio.findFirst({
-    where: { cerda_id: Number(cerda_id) },
-    orderBy: { id: "desc" },
-    include: {
-      montas: {
-        orderBy: { fecha: "asc" },
-        take: 1,
-      },
-    },
-  });
+  const servicio = await validateServicio(cerda_id, granja_id, fecha);
 
-  if (!ultimoServicio || ultimoServicio.montas.length === 0) {
-    throw new Error(
-      "Servicio not found or no montas associated with the last service."
-    );
-  }
+  validateDateParto(fecha, servicio);
 
-  const fechaMonta = ultimoServicio.montas[0].fecha;
-  const fechaParto = new Date(fecha);
+  await validateCerda(cerda_id, granja_id);
+  await validateParidera(paridera_id, granja_id);
+  await validateOperarios(operarios || [], granja_id);
+  await validateVacunas(vacunas || [], granja_id);
 
-  const diffTiempo = fechaParto.getTime() - fechaMonta.getTime();
-  const diffDias = diffTiempo / (1000 * 3600 * 24);
-
-  if (diffDias < 110) {
-    throw new Error(
-      `Parto creation failed. Only ${Math.floor(
-        diffDias
-      )} days have passed since the last monta (minimum 110 days required).`
-    );
-  }
-
-  const cerda = await prisma.cerda.findUnique({
-    where: { id: Number(cerda_id), activo: true, disponible: true },
-  });
-
-  if (!cerda) {
-    throw new Error("Cerda not found.");
-  }
-  if (cerda.condicion !== "gestando") {
-    throw new Error("Cerda aren't gestando, cannot register parto.");
-  }
-
-  const paridera = await prisma.paridera.findUnique({
-    where: { id: Number(paridera_id), activo: true },
-  });
-
-  if (!paridera) {
-    throw new Error("Paridera not found.");
-  }
-  if (!paridera.disponible) {
-    throw new Error("Paridera is not available for assignment at this moment.");
-  }
-
-  const [parto, ..._] = await prisma.$transaction([
+  const [parto] = await prisma.$transaction([
     prisma.parto.create({
       data: {
         cerda: { connect: { id: Number(cerda_id) } },
-        vivos,
-        muertos,
-        momias,
-        peso,
+        nacidos_vivos: Number(vivos),
+        nacidos_muertos: Number(muertos),
+        nacidos_momias: Number(momias),
+        peso: Number(peso),
         paridera: { connect: { id: Number(paridera_id) } },
         turno,
         fecha,
@@ -107,19 +63,24 @@ export const createParto = async (data) => {
       },
     }),
     prisma.cerda.update({
-      where: { id: Number(cerda_id) },
+      where: { id: Number(cerda_id), granja_id: Number(granja_id) },
       data: { condicion: "lactando" },
     }),
     prisma.paridera.update({
-      where: { id: Number(paridera_id) },
+      where: { id: Number(paridera_id), granja_id: Number(granja_id) },
       data: { disponible: false },
     }),
+    servicio.cerda.jaula_id &&
+      prisma.jaula.update({
+        where: { id: servicio.cerda.jaula_id, granja_id: Number(granja_id) },
+        data: { disponible: true },
+      }),
   ]);
 
   return parto;
 };
 
-export const updateParto = async (id, data) => {
+export const updateParto = async (id, granja_id, data) => {
   const {
     vivos,
     muertos,
@@ -138,47 +99,17 @@ export const updateParto = async (id, data) => {
   } = data;
   const dataToUpdate = {};
 
-  const currentParto = await prisma.parto.findUnique({
-    where: { id: Number(id) },
-  });
-
-  if (!currentParto) {
-    throw new Error("Parto not found.");
-  }
+  const currentParto = await validateParto(id, granja_id);
 
   if (fecha !== undefined) {
-    const fechaPartoNueva = new Date(fecha);
-    if (fechaPartoNueva.toDateString() !== currentParto.fecha.toDateString()) {
-      const ultimoServicio = await prisma.servicio.findFirst({
-        where: { cerda_id: currentParto.cerda_id },
-        orderBy: { id: "desc" },
-        include: { montas: { orderBy: { fecha: "asc" }, take: 1 } },
-      });
-
-      if (!ultimoServicio || ultimoServicio.montas.length === 0) {
-        throw new Error(
-          "Servicio not found or no montas associated with the last service."
-        );
-      }
-
-      const fechaMonta = ultimoServicio.montas[0].fecha;
-      const diffTiempo = fechaPartoNueva.getTime() - fechaMonta.getTime();
-      const diffDias = diffTiempo / (1000 * 3600 * 24);
-
-      if (diffDias < 110) {
-        throw new Error(
-          `The new parto date is invalid. Only ${Math.floor(
-            diffDias
-          )} days have passed since the monta (more than 110 are required).`
-        );
-      }
-    }
+    const servicio = await validateServicio(currentParto.cerda_id, granja_id);
+    validateDateParto(fecha, servicio);
     dataToUpdate.fecha = fecha;
   }
 
-  if (vivos !== undefined) dataToUpdate.vivos = vivos;
-  if (muertos !== undefined) dataToUpdate.muertos = muertos;
-  if (momias !== undefined) dataToUpdate.momias = momias;
+  if (vivos !== undefined) dataToUpdate.nacidos_vivos = vivos;
+  if (muertos !== undefined) dataToUpdate.nacidos_muertos = muertos;
+  if (momias !== undefined) dataToUpdate.nacidos_momias = momias;
   if (peso !== undefined) dataToUpdate.peso = peso;
   if (turno !== undefined) dataToUpdate.turno = turno;
   if (hora_inicio !== undefined) dataToUpdate.hora_inicio = hora_inicio;
@@ -188,27 +119,24 @@ export const updateParto = async (id, data) => {
   if (duracion !== undefined) dataToUpdate.duracion = duracion;
 
   if (operarios !== undefined) {
+    await validateOperarios(operarios, granja_id);
     dataToUpdate.operarios = {
       set: operarios.map((opId) => ({ id: Number(opId) })),
     };
   }
   if (vacunas !== undefined) {
+    await validateVacunas(vacunas, granja_id);
     dataToUpdate.vacunas = {
       set: vacunas.map((vacId) => ({ id: Number(vacId) })),
     };
   }
 
-  if (paridera_id !== undefined && currentParto.paridera_id !== undefined) {
-    const parideraNueva = await prisma.paridera.findUnique({
-      where: { id: Number(paridera_id) },
-    });
-    if (!parideraNueva || !parideraNueva.disponible) {
-      throw new Error("Paridera not found or not available.");
-    }
+  if (paridera_id !== undefined) {
+    await validateParidera(paridera_id, granja_id);
 
     dataToUpdate.paridera = { connect: { id: Number(paridera_id) } };
 
-    const [updatedParto, ..._] = await prisma.$transaction([
+    const [updatedParto] = await prisma.$transaction([
       prisma.parto.update({ where: { id: Number(id) }, data: dataToUpdate }),
       prisma.paridera.update({
         where: { id: Number(paridera_id) },
@@ -229,9 +157,9 @@ export const updateParto = async (id, data) => {
   }
 };
 
-export const getPartoById = async (id) => {
-  return await prisma.parto.findUnique({
-    where: { id: Number(id) },
+export const getPartoById = async (id, granja_id) => {
+  return await prisma.parto.findFirst({
+    where: { id: Number(id), granja_id: Number(granja_id) },
   });
 };
 
@@ -241,25 +169,159 @@ export const listPartos = async (granja_id) => {
   });
 };
 
-export const deleteParto = async (id) => {
-  const parto = await prisma.parto.findUnique({
-    where: { id: Number(id) },
-  });
-  if (!parto) {
-    throw new Error("Parto not found.");
+export const deleteParto = async (id, granja_id) => {
+  const parto = await validateParto(id, granja_id, true);
+
+  const hasRecords =
+    (parto.adopciones && parto.adopciones.length > 0) ||
+    (parto.donaciones && parto.donaciones.length > 0) ||
+    (parto.muertos && parto.muertos.length > 0) ||
+    (parto.destetes && parto.destetes.length > 0);
+
+  if (hasRecords) {
+    throw new AppError("PARTO_CANNOT_DELETE_HAS_RECORDS", 400);
   }
 
   const [deleteParto, ..._] = await prisma.$transaction([
+    prisma.parto.delete({
+      where: { id: Number(id), granja_id: Number(granja_id) },
+    }),
     prisma.paridera.update({
-      where: { id: parto.paridera_id },
+      where: { id: parto.paridera_id, granja_id: Number(granja_id) },
       data: { disponible: true },
     }),
-    prisma.parto.delete({ where: { id } }),
     prisma.cerda.update({
-      where: { id: parto.cerda_id },
+      where: { id: parto.cerda_id, granja_id: Number(granja_id) },
       data: { condicion: "gestando", paridera_id: null },
     }),
   ]);
 
   return deleteParto;
+};
+
+const validateServicio = async (cerda_id, granja_id, fecha) => {
+  const servicio = await prisma.servicio.findFirst({
+    where: { cerda_id: Number(cerda_id), granja_id: Number(granja_id) },
+    orderBy: { id: "desc" },
+    include: {
+      montas: {
+        orderBy: { fecha: "asc" },
+        take: 1,
+      },
+    },
+  });
+
+  if (!servicio || servicio.montas.length === 0) {
+    throw new AppError("SERVICIO_NOT_FOUND", 400);
+  }
+
+  return servicio;
+};
+
+const validateDateParto = (fecha, servicio) => {
+  const fechaMonta = servicio.montas[0].fecha;
+  const fechaParto = new Date(fecha);
+
+  const diffTiempo = fechaParto.getTime() - fechaMonta.getTime();
+  const diffDias = diffTiempo / (1000 * 3600 * 24);
+
+  if (diffDias < 110) {
+    throw new AppError("PARTO_LESS_THAN_110_DAYS", 400);
+  }
+};
+
+const validateCerda = async (cerda_id, granja_id) => {
+  const cerda = await prisma.cerda.findFirst({
+    where: {
+      id: Number(cerda_id),
+      granja_id: Number(granja_id),
+      activo: true,
+    },
+  });
+  if (!cerda) {
+    throw new AppError("CERDA_NOT_FOUND", 400);
+  }
+  if (cerda.condicion !== "gestando") {
+    throw new AppError("CERDA_NOT_GESTANDO", 400);
+  }
+  return cerda;
+};
+
+const validateParidera = async (paridera_id, granja_id) => {
+  const paridera = await prisma.paridera.findFirst({
+    where: {
+      id: Number(paridera_id),
+      granja_id: Number(granja_id),
+      activo: true,
+    },
+  });
+  if (!paridera) {
+    throw new AppError("PARIDERA_NOT_FOUND", 400);
+  }
+  if (!paridera.disponible) {
+    throw new AppError("PARIDERA_NOT_AVAILABLE", 400);
+  }
+  return paridera;
+};
+
+const validateVacunas = async (vacunas, granja_id) => {
+  if (vacunas.length === 0) return;
+
+  const count = await prisma.vacuna.count({
+    where: {
+      id: { in: vacunas.map(Number) },
+      granja_id: Number(granja_id),
+      activo: true,
+    },
+  });
+
+  if (count !== vacunas.length) {
+    throw new AppError("VACUNA_NOT_FOUND", 400);
+  }
+};
+
+const validateOperarios = async (operarios, granja_id) => {
+  if (operarios.length === 0) return;
+
+  const count = await prisma.operario.count({
+    where: {
+      id: { in: operarios.map(Number) },
+      granja_id: Number(granja_id),
+      activo: true,
+    },
+  });
+
+  if (count !== operarios.length) {
+    throw new AppError("OPERARIO_NOT_FOUND", 400);
+  }
+};
+
+const validateParto = async (parto_id, granja_id, withExtension = false) => {
+  const parto = await prisma.parto.findFirst({
+    where: { id: parto_id, granja_id },
+    include: withExtension
+      ? {
+          adopciones: {
+            take: 1,
+            orderBy: { fecha: "desc" },
+          },
+          donaciones: {
+            take: 1,
+            orderBy: { fecha: "desc" },
+          },
+          muertos: {
+            take: 1,
+            orderBy: { fecha: "desc" },
+          },
+          destetes: {
+            take: 1,
+            orderBy: { fecha: "desc" },
+          },
+        }
+      : undefined,
+  });
+  if (!parto) {
+    throw new AppError("PARTO_NOT_FOUND", 404);
+  }
+  return parto;
 };

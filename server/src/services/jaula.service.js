@@ -1,7 +1,11 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
-export const createJaula = async (data) => {
-  const { nombre, granja_id } = data;
+export const createJaula = async (data, granja_id) => {
+  const { nombre } = data;
+
+  await validateJaulaNameUnique(nombre, granja_id);
+
   return prisma.jaula.create({
     data: { nombre, granja_id },
   });
@@ -13,21 +17,23 @@ export const listJaulas = async (granja_id) => {
   });
 };
 
-export const getJaulaById = async (id) => {
-  return prisma.jaula.findUnique({ where: { id: id } });
+export const getJaulaById = async (id, granja_id) => {
+  const jaula = await validateJaulaExists(id, granja_id);
+  return jaula;
 };
 
-export const updateJaula = async (id, data) => {
+export const updateJaula = async (id, granja_id, data) => {
   const { nombre, activo } = data;
   const dataToUpdate = {};
 
-  const jaula = await prisma.jaula.findUnique({ where: { id: id } });
+  const jaula = await validateJaulaExists(id, granja_id);
 
-  if (!jaula) {
-    throw new Error("Jaula not found.");
+  if (nombre !== undefined) {
+    if (nombre !== jaula.nombre) {
+      await validateJaulaNameUnique(nombre, granja_id);
+    }
+    dataToUpdate.nombre = nombre;
   }
-
-  if (nombre !== undefined) dataToUpdate.nombre = nombre;
   if (activo !== undefined) dataToUpdate.activo = activo;
 
   return prisma.jaula.update({
@@ -36,15 +42,8 @@ export const updateJaula = async (id, data) => {
   });
 };
 
-export const deleteJaula = async (id) => {
-  const jaula = await prisma.jaula.findUnique({
-    where: { id },
-    include: { cerdas: true, berracos: true },
-  });
-
-  if (!jaula) {
-    throw new Error("Jaula not found.");
-  }
+export const deleteJaula = async (id, granja_id) => {
+  const jaula = await validateJaulaExists(id, granja_id, true);
 
   if (jaula.cerdas.length > 0 || jaula.berracos.length > 0) {
     const [updatedJaula] = await prisma.$transaction([
@@ -66,4 +65,22 @@ export const deleteJaula = async (id) => {
   }
 
   return prisma.jaula.delete({ where: { id } });
+};
+
+const validateJaulaExists = async (id, granja_id, withRelations = false) => {
+  const jaula = await prisma.jaula.findFirst({
+    where: { id: id, granja_id: granja_id, activo: true },
+    include: withRelations ? { cerdas: true, berracos: true } : undefined,
+  });
+
+  if (!jaula) throw new AppError("JAULA_NOT_FOUND", 404);
+  return jaula;
+};
+
+const validateJaulaNameUnique = async (nombre, granja_id) => {
+  const jaula = await prisma.jaula.findFirst({
+    where: { nombre: nombre, granja_id: granja_id, activo: true },
+  });
+
+  if (jaula) throw new AppError("JAULA_NAME_EXISTS", 409);
 };

@@ -1,21 +1,13 @@
+import { AppError } from "../errors/appError.js";
 import prisma from "../prismaClient.js";
 
-export const createCerdaRemovida = async (data) => {
-  const { causa, observacion, fecha, granja_id, cerda_id } = data;
+export const createCerdaRemovida = async (granja_id, data) => {
+  const { causa, observacion, fecha, cerda_id } = data;
+  const transactions = [];
 
-  const cerda = await prisma.cerda.findUnique({
-    where: { id: cerda_id, activo: true },
-  });
+  const cerda = await validateCerdaExists(cerda_id, granja_id);
 
-  if (!cerda) {
-    throw new Error("Cerda not found.");
-  }
-
-  if (!cerda.activo) {
-    throw new Error("Cerda is already inactive.");
-  }
-
-  await validarFechaPorCondicion(cerda.condicion, cerda_id, fecha);
+  await validateDateByCondition(cerda.condicion, cerda_id, fecha);
 
   const dataToCreate = {
     causa,
@@ -25,8 +17,6 @@ export const createCerdaRemovida = async (data) => {
     cerda: { connect: { id: cerda_id } },
     condicion_anterior: cerda.condicion,
   };
-
-  const updates = [];
 
   if (cerda.jaula_id) {
     updates.push(
@@ -58,38 +48,35 @@ export const createCerdaRemovida = async (data) => {
     })
   );
 
-  const [deleteCerda] = await prisma.$transaction([
+  const [cerdaRemovida] = await prisma.$transaction([
     prisma.cerda_Removida.create({ data: dataToCreate }),
-    ...updates,
+    ...transactions,
   ]);
 
-  return deleteCerda;
+  return cerdaRemovida;
 };
 
 export const listCerdasRemovidas = async (granja_id) => {
   return await prisma.cerda_Removida.findMany({ where: { granja_id } });
 };
 
-export const getCerdaRemovidaById = async (id) => {
-  return await prisma.cerda_Removida.findUnique({ where: { id } });
+export const getCerdaRemovidaById = async (id, granja_id) => {
+  const cerdaRemovida = await validateCerdaRemovidaExists(id, granja_id);
+  return cerdaRemovida;
 };
 
-export const updateCerdaRemovida = async (id, data) => {
+export const updateCerdaRemovida = async (id, granja_id, data) => {
   const { causa, observacion, fecha } = data;
   const dataToUpdate = {};
 
-  const cerdaRemovida = await prisma.cerda_Removida.findUnique({
-    where: { id },
-  });
-
-  if (!cerdaRemovida) {
-    throw new Error("Cerda Removida not found.");
-  }
+  const cerdaRemovida = await validateCerdaRemovidaExists(id, granja_id);
 
   if (causa !== undefined) dataToUpdate.causa = causa;
+
   if (observacion !== undefined) dataToUpdate.observacion = observacion;
+
   if (fecha !== undefined) {
-    await validarFechaPorCondicion(
+    await validateDateByCondition(
       cerdaRemovida.condicion_anterior,
       cerdaRemovida.cerda_id,
       fecha
@@ -103,14 +90,8 @@ export const updateCerdaRemovida = async (id, data) => {
   });
 };
 
-export const deleteCerdaRemovida = async (id) => {
-  const cerdaRemovida = await prisma.cerda_Removida.findUnique({
-    where: { id: id },
-  });
-
-  if (!cerdaRemovida) {
-    throw new Error("Cerda Removida not found.");
-  }
+export const deleteCerdaRemovida = async (id, granja_id) => {
+  const cerdaRemovida = await validateCerdaRemovidaExists(id, granja_id);
 
   const [deleteCerdaRemovida] = await prisma.$transaction([
     prisma.cerda_Removida.delete({ where: { id: id } }),
@@ -119,55 +100,69 @@ export const deleteCerdaRemovida = async (id) => {
       data: {
         activo: true,
         condicion: cerdaRemovida.condicion_anterior,
+        jaula_id: null,
+        paridera_id: null,
       },
     }),
   ]);
   return deleteCerdaRemovida;
 };
 
-const validarFechaPorCondicion = async (condicion, cerda_id, fecha) => {
+const validateCerdaExists = async (id, granja_id) => {
+  const cerda = await prisma.cerda.findFirst({
+    where: { id: id, granja_id: granja_id, activo: true },
+  });
+  if (!cerda) {
+    throw new AppError("CERDA_NOT_FOUND", 404);
+  }
+  return cerda;
+};
+
+const validateDateByCondition = async (condicion, cerda_id, fecha) => {
   switch (condicion) {
     case "aborto":
       const aborto = await prisma.aborto.findFirst({
-        where: { cerda_id: cerda_id, activo: true },
+        where: { cerda_id: cerda_id },
       });
       if (aborto && aborto.fecha < fecha) {
-        throw new Error(
-          "The date cannot be earlier than your last event 'aborto'"
-        );
+        throw new AppError("CERDA_REMOVIDA_INVALID_DATE", 400);
       }
       break;
     case "lactando":
       const parto = await prisma.parto.findFirst({
-        where: { cerda_id: cerda_id, activo: true },
+        where: { cerda_id: cerda_id },
       });
       if (parto && parto.fecha > fecha) {
-        throw new Error(
-          "The date cannot be earlier than your last event 'parto'"
-        );
+        throw new AppError("CERDA_REMOVIDA_INVALID_DATE", 400);
       }
       break;
     case "gestando":
-      const servicio = await prisma.servicio.findFirst({
-        where: { cerda_id: cerda_id, activo: true },
-        include: { montas: true },
+      const ultimaMonta = await prisma.monta.findFirst({
+        where: { cerda_id: cerda_id },
+        orderBy: { fecha: "desc" },
       });
-      const primeraMonta = servicio.montas[0];
-      if (servicio && primeraMonta.fecha > fecha) {
-        throw new Error(
-          "The date cannot be earlier than your last event 'servicio'"
-        );
+
+      if (ultimaMonta && ultimaMonta.fecha > fecha) {
+        throw new AppError("CERDA_REMOVIDA_INVALID_DATE", 400);
       }
       break;
     case "destetada":
       const detete = await prisma.destete.findFirst({
-        where: { cerda_id: cerda_id, activo: true },
+        where: { cerda_id: cerda_id },
       });
       if (detete && detete.fecha > fecha) {
-        throw new Error(
-          "The date cannot be earlier than your last event 'destete'"
-        );
+        throw new AppError("CERDA_REMOVIDA_INVALID_DATE", 400);
       }
       break;
   }
+};
+
+const validateCerdaRemovidaExists = async (id, granja_id) => {
+  const cerdaRemovida = await prisma.cerda_Removida.findFirst({
+    where: { id: id, granja_id: granja_id },
+  });
+  if (!cerdaRemovida) {
+    throw new AppError("CERDA_REMOVIDA_NOT_FOUND", 404);
+  }
+  return cerdaRemovida;
 };

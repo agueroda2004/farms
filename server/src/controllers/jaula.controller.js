@@ -1,13 +1,10 @@
 import * as service from "../services/jaula.service.js";
-import { Prisma } from "@prisma/client";
+import { successResponse } from "../utils/response.js";
 
 export const createJaula = async (req, res, next) => {
   try {
-    const jaula = await service.createJaula(req.body);
-    res.status(201).json({
-      message: "Jaula created successfully",
-      jaula,
-    });
+    const jaula = await service.createJaula(req.body, req.user.granja_id);
+    successResponse(res, req, 200, "JAULA_CREATED", jaula);
   } catch (error) {
     next(error);
   }
@@ -15,10 +12,8 @@ export const createJaula = async (req, res, next) => {
 
 export const listJaulas = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const jaulas = await service.listJaulas(Number(granja_id));
-
-    res.json(jaulas);
+    const jaulas = await service.listJaulas(req.user.granja_id);
+    successResponse(res, req, 200, "JAULAS_LISTED", jaulas);
   } catch (error) {
     next(error);
   }
@@ -26,31 +21,34 @@ export const listJaulas = async (req, res, next) => {
 
 export const getJaulaById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const jaula = await service.getJaulaById(Number(id));
-    if (!jaula) return res.status(404).json({ error: "Jaula not found." });
-    res.json(jaula);
+    const jaula = await service.getJaulaById(
+      Number(req.params.id),
+      req.user.granja_id
+    );
+    successResponse(res, req, 200, "JAULA_FETCHED", jaula);
   } catch (error) {
     next(error);
   }
 };
 export const updateJaula = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const jaulaUpdated = await service.updateJaula(Number(id), req.body);
-    res.json({
-      message: "Jaula updated successfully.",
-      jaula: jaulaUpdated,
-    });
+    const jaulaUpdated = await service.updateJaula(
+      Number(req.params.id),
+      req.user.granja_id,
+      req.body
+    );
+    successResponse(res, req, 200, "JAULA_UPDATED", jaulaUpdated);
   } catch (error) {
     next(error);
   }
 };
 export const deleteJaula = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    await service.deleteJaula(Number(id));
-    res.json({ message: "Jaula deleted successfully." });
+    const jaulaDeleted = await service.deleteJaula(
+      Number(req.params.id),
+      req.user.granja_id
+    );
+    successResponse(res, req, 200, "JAULA_DELETED", jaulaDeleted);
   } catch (error) {
     next(error);
   }
