@@ -59,9 +59,7 @@ model Granja {
   montas Monta[]
   partos Parto[]
   parideras Paridera[]
-  partos_Operarios Parto_Operario[]
   vacunas Vacuna[]
-  partos_Vacunas Parto_Vacuna[]
   muertos_PreDestete Muerto_PreDestete[]
   enfermedades_PreDestete Enfermedad_PreDestete[]
   destetes Destete[]
@@ -106,7 +104,6 @@ model Jaula {
   abortos Aborto[]
   berracos Berraco[]
   servicios Servicio[]
-  partos Parto[]
 }
 
 model Cerda {

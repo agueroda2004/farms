@@ -1,14 +1,19 @@
 import * as service from "../services/enfermedadPreDestete.service.js";
+import { successResponse } from "../utils/response.js";
 
 export const createEnfermedadPreDestete = async (req, res) => {
   try {
     const enfermedadPreDestete = await service.createEnfermedadPreDestete(
-      req.body
+      req.body,
+      Number(req.user.granja_id)
     );
-    return res.status(201).json({
-      message: "Enfermedad pre-destete created successfully",
-      enfermedadPreDestete,
-    });
+    successResponse(
+      res,
+      req,
+      201,
+      "ENFERMEDAD_PRE_DESTETE_CREATED",
+      enfermedadPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -16,11 +21,16 @@ export const createEnfermedadPreDestete = async (req, res) => {
 
 export const listEnfermedadPreDestete = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
     const enfermedadesPreDestete = await service.listEnfermedadPreDestete(
-      granja_id
+      Number(req.user.granja_id)
     );
-    return res.status(200).json(enfermedadesPreDestete);
+    successResponse(
+      res,
+      req,
+      200,
+      "ENFERMEDAD_PRE_DESTETE_LISTED",
+      enfermedadesPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -28,14 +38,17 @@ export const listEnfermedadPreDestete = async (req, res, next) => {
 
 export const getEnfermedadPreDesteteById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const enfermedadPreDestete = await service.getEnfermedadPreDesteteById(id);
-    if (!enfermedadPreDestete) {
-      return res
-        .status(404)
-        .json({ error: "Enfermedad pre-destete not found." });
-    }
-    return res.status(200).json(enfermedadPreDestete);
+    const enfermedadPreDestete = await service.getEnfermedadPreDesteteById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(
+      res,
+      req,
+      200,
+      "ENFERMEDAD_PRE_DESTETE_FETCHED",
+      enfermedadPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -43,13 +56,19 @@ export const getEnfermedadPreDesteteById = async (req, res, next) => {
 
 export const updateEnfermedadPreDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
     const updatedEnfermedadPreDestete =
-      await service.updateEnfermedadPreDestete(id, req.body);
-    return res.status(200).json({
-      message: "Enfermedad pre-destete updated successfully",
-      updatedEnfermedadPreDestete,
-    });
+      await service.updateEnfermedadPreDestete(
+        Number(req.params.id),
+        Number(req.user.granja_id),
+        req.body
+      );
+    successResponse(
+      res,
+      req,
+      200,
+      "ENFERMEDAD_PRE_DESTETE_UPDATED",
+      updatedEnfermedadPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -57,31 +76,19 @@ export const updateEnfermedadPreDestete = async (req, res, next) => {
 
 export const deleteEnfermedadPreDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
     const deletedEnfermedadPreDestete =
-      await service.deleteEnfermedadPreDestete(id);
-    return res.status(200).json({
-      message: "Enfermedad pre-destete deleted successfully",
-      deletedEnfermedadPreDestete,
-    });
+      await service.deleteEnfermedadPreDestete(
+        Number(req.params.id),
+        Number(req.user.granja_id)
+      );
+    successResponse(
+      res,
+      req,
+      200,
+      "ENFERMEDAD_PRE_DESTETE_DELETED",
+      deletedEnfermedadPreDestete
+    );
   } catch (error) {
-    if (
-      error instanceof Prisma.PrismaClientKnownRequestError &&
-      error.code === "P2003"
-    ) {
-      try {
-        const enfermedadPreDesteteDesactivada =
-          await service.updateEnfermedadPreDestete(id, {
-            activo: false,
-          });
-        return res.status(201).json({
-          message: "Enfermedad pre-destete deactivated successfully",
-          enfermedad: enfermedadPreDesteteDesactivada,
-        });
-      } catch (updateError) {
-        return next(updateError);
-      }
-    }
     next(error);
   }
 };

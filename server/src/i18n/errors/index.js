@@ -8,6 +8,7 @@ import { servicioErrorMessages } from "../errors/servicioErrorMessages.js";
 import { operarioErrorMessages } from "../errors/operarioErrorMessagess.js";
 import { vacunaErrorMessages } from "../errors/vacunaErrorMessages.js";
 import { parideraErrorMessages } from "../errors/parideraErrorMessages.js";
+import { enfermedadPreDesteteErrorMessages } from "../errors/enfermedadPreDesteteErrorMessages.js";
 
 export const errorMessages = {
   es: {
@@ -21,6 +22,7 @@ export const errorMessages = {
     ...operarioErrorMessages.es,
     ...vacunaErrorMessages.es,
     ...parideraErrorMessages.es,
+    ...enfermedadPreDesteteErrorMessages.es,
   },
   en: {
     ...jaulaErrorMessages.en,
@@ -33,5 +35,6 @@ export const errorMessages = {
     ...operarioErrorMessages.en,
     ...vacunaErrorMessages.en,
     ...parideraErrorMessages.en,
+    ...enfermedadPreDesteteErrorMessages.en,
   },
 };

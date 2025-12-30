@@ -10,6 +10,7 @@ import { operarioSuccessMessages } from "./operarioSuccessMessages.js";
 import { vacunaSuccessMessages } from "./vacunaSuccessMessages.js";
 import { parideraSuccessMessages } from "./parideraSuccessMessages.js";
 import { partoSuccessMessages } from "./partoSucccesMessages.js";
+import { enfermedadPreDesteteSuccessMessages } from "./enfermedadPreDesteteSuccessMessages.js";
 
 export const successMessages = {
   es: {
@@ -25,6 +26,7 @@ export const successMessages = {
     ...vacunaSuccessMessages.es,
     ...parideraSuccessMessages.es,
     ...partoSuccessMessages.es,
+    ...enfermedadPreDesteteSuccessMessages.es,
   },
   en: {
     ...jaulaSuccessMessages.en,
@@ -39,5 +41,6 @@ export const successMessages = {
     ...vacunaSuccessMessages.en,
     ...parideraSuccessMessages.en,
     ...partoSuccessMessages.en,
+    ...enfermedadPreDesteteSuccessMessages.en,
   },
 };
