@@ -1,6 +1,95 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
-export const createMuertoPreDestete = async (data) => {
+const validateCerdaExist = async (
+  cerda_id,
+  granja_id,
+  withExtensions = false
+) => {
+  const cerda = await prisma.cerda.findFirst({
+    where: {
+      id: cerda_id,
+      granja_id,
+      activo: true,
+    },
+    include: {
+      partos: {
+        take: 1,
+        orderBy: { fecha: "desc" },
+      },
+      destetes: withExtensions
+        ? {
+            take: 1,
+            orderBy: { fecha: "desc" },
+          }
+        : undefined,
+    },
+  });
+  if (!cerda) {
+    throw new AppError("CERDA_NOT_FOUND", 404);
+  }
+  if (cerda.condicion !== "lactando") {
+    throw new AppError("CERDA_NOT_LACTANDO", 400);
+  }
+  if (cerda.partos.length === 0) {
+    throw new AppError("CERDA_HAS_NOT_PARTOS", 400);
+  }
+  if (cerda.paridera_id === null) {
+    throw new AppError("CERDA_NOT_ASSIGNED_PARIDERA", 400);
+  }
+  return cerda;
+};
+
+const validateDateMuerto = (fechaMuerte, ultimoParto) => {
+  const fechaParto = new Date(ultimoParto.fecha);
+  fechaParto.setHours(0, 0, 0, 0);
+  fechaMuerte.setHours(0, 0, 0, 0);
+  if (fechaMuerte < fechaParto) {
+    throw new AppError("MUERTO_PRE_DESTETE_DATE_INVALID", 400);
+  }
+};
+
+const validateOperarioExist = async (operario_id, granja_id) => {
+  const operario = await prisma.operario.findFirst({
+    where: {
+      id: operario_id,
+      granja_id,
+    },
+  });
+  if (!operario) {
+    throw new AppError("OPERARIO_NOT_FOUND", 404);
+  }
+  return operario;
+};
+
+const validateEnfermedadPreDesteteExist = async (enfermedad_id, granja_id) => {
+  const enfermedad = await prisma.enfermedad_PreDestete.findFirst({
+    where: {
+      id: enfermedad_id,
+      granja_id,
+      activo: true,
+    },
+  });
+  if (!enfermedad) {
+    throw new AppError("ENFERMEDAD_PRE_DESTETE_NOT_FOUND", 404);
+  }
+  return enfermedad;
+};
+
+const validateMuertoPreDesteteExist = async (id, granja_id) => {
+  const muertoPreDestete = await prisma.muerto_PreDestete.findFirst({
+    where: {
+      id,
+      granja_id,
+    },
+  });
+  if (!muertoPreDestete) {
+    throw new AppError("MUERTO_PRE_DESTETE_NOT_FOUND", 404);
+  }
+  return muertoPreDestete;
+};
+
+export const createMuertoPreDestete = async (data, granja_id) => {
   const {
     fecha,
     cantidad,
@@ -11,65 +100,14 @@ export const createMuertoPreDestete = async (data) => {
     operario_id,
     enfermedad_id,
     cerda_id,
-    granja_id,
   } = data;
 
-  const cerda = await prisma.cerda.findFirst({
-    where: {
-      id: cerda_id,
-      granja_id,
-    },
-    include: {
-      partos: { take: 1, orderBy: { fecha: "desc" } },
-    },
-  });
-  if (!cerda) {
-    throw new Error("Cerda not found in this farm.");
-  }
-  if (cerda.condicion !== "lactando") {
-    throw new Error("Cerda is not in lactating condition.");
-  }
-  if (cerda.partos.length === 0) {
-    throw new Error("Cerda has no recorded partos.");
-  }
-  if (cerda.paridera_id === null) {
-    throw new Error("Cerda is not assigned to any paridera.");
-  }
+  const cerda = await validateCerdaExist(cerda_id, granja_id);
+  validateDateMuerto(fecha, cerda.partos[0]);
+  await validateOperarioExist(operario_id, granja_id);
+  await validateEnfermedadPreDesteteExist(enfermedad_id, granja_id);
 
-  const ultimoParto = cerda.partos[0];
-  const fechaMuerte = new Date(fecha);
-
-  const fechaParto = new Date(ultimoParto.fecha);
-  fechaParto.setHours(0, 0, 0, 0);
-  fechaMuerte.setHours(0, 0, 0, 0);
-
-  if (fechaMuerte < fechaParto) {
-    throw new Error(
-      "The death date cannot be earlier than the date of the last parto."
-    );
-  }
-
-  const operario = await prisma.operario.findFirst({
-    where: {
-      id: operario_id,
-      granja_id,
-    },
-  });
-  if (!operario) {
-    throw new Error("Operario not found in this farm.");
-  }
-
-  const enfermedad = await prisma.enfermedad_PreDestete.findFirst({
-    where: {
-      id: enfermedad_id,
-      granja_id,
-    },
-  });
-  if (!enfermedad) {
-    throw new Error("Enfermedad pre-destete not found in this farm.");
-  }
-
-  return await prisma.muertos_PreDestete.create({
+  return await prisma.muerto_PreDestete.create({
     data: {
       fecha,
       cantidad,
@@ -88,19 +126,20 @@ export const createMuertoPreDestete = async (data) => {
 };
 
 export const listMuertoPreDestete = async (granja_id) => {
-  return await prisma.muertos_PreDestete.findMany({
+  return await prisma.muerto_PreDestete.findMany({
     where: { granja_id: granja_id },
   });
 };
 
-export const getMuertoPreDesteteById = async (id) => {
-  return await prisma.muertos_PreDestete.findUnique({
+export const getMuertoPreDesteteById = async (id, granja_id) => {
+  return await prisma.muerto_PreDestete.findUnique({
     where: {
       id,
     },
   });
 };
-export const updateMuertoPreDestete = async (id, data) => {
+
+export const updateMuertoPreDestete = async (id, granja_id, data) => {
   const {
     fecha,
     cantidad,
@@ -113,49 +152,11 @@ export const updateMuertoPreDestete = async (id, data) => {
   } = data;
   const dataToUpdate = {};
 
-  const muertoPreDestete = await prisma.muertos_PreDestete.findUnique({
-    where: { id: Number(id) },
-  });
-  if (!muertoPreDestete) {
-    throw new Error("Muerto pre-destete not found.");
-  }
-
-  const cerda = await prisma.cerda.findFirst({
-    where: {
-      id: muertoPreDestete.cerda_id,
-      granja_id: muertoPreDestete.granja_id,
-    },
-    include: {
-      partos: { take: 1, orderBy: { fecha: "desc" } },
-    },
-  });
-
-  if (!cerda) {
-    throw new Error("Cerda not found in this farm.");
-  }
-  if (cerda.condicion !== "lactando") {
-    throw new Error("Cerda is not in lactating condition.");
-  }
-  if (cerda.partos.length === 0) {
-    throw new Error("Cerda has no recorded births.");
-  }
-  if (cerda.paridera_id === null) {
-    throw new Error("Cerda is not assigned to any paridera.");
-  }
+  const muertoPreDestete = await validateMuertoPreDesteteExist(id, granja_id);
+  const cerda = await validateCerdaExist(muertoPreDestete.cerda_id, granja_id);
 
   if (fecha !== undefined) {
-    const ultimoParto = cerda.partos[0];
-    const fechaMuerte = new Date(fecha);
-
-    const fechaParto = new Date(ultimoParto.fecha);
-    fechaParto.setHours(0, 0, 0, 0);
-    fechaMuerte.setHours(0, 0, 0, 0);
-
-    if (fechaMuerte < fechaParto) {
-      throw new Error(
-        "The death date cannot be earlier than the date of the last birth."
-      );
-    }
+    validateDateMuerto(fecha, cerda.partos[0]);
     dataToUpdate.fecha = fecha;
   }
   if (cantidad !== undefined) dataToUpdate.cantidad = cantidad;
@@ -164,56 +165,32 @@ export const updateMuertoPreDestete = async (id, data) => {
   if (turno !== undefined) dataToUpdate.turno = turno;
   if (hora !== undefined) dataToUpdate.hora = hora;
   if (operario_id !== undefined) {
-    const operario = await prisma.operario.findFirst({
-      where: {
-        id: operario_id,
-        granja_id: muertoPreDestete.granja_id,
-      },
-    });
-    if (!operario) {
-      throw new Error("Operario not found in this farm.");
-    }
+    await validateOperarioExist(operario_id, granja_id);
     dataToUpdate.operario_id = operario_id;
   }
   if (enfermedad_id !== undefined) {
-    const enfermedad = await prisma.enfermedad_PreDestete.findFirst({
-      where: {
-        id: enfermedad_id,
-        granja_id: muertoPreDestete.granja_id,
-      },
-    });
-    if (!enfermedad) {
-      throw new Error("Enfermedad pre-destete not found in this farm.");
-    }
+    await validateEnfermedadPreDesteteExist(enfermedad_id, granja_id);
     dataToUpdate.enfermedad_PreDestete_id = enfermedad_id;
   }
-  return await prisma.muertos_PreDestete.update({
-    where: { id: Number(id) },
+  return await prisma.muerto_PreDestete.update({
+    where: { id: Number(id), granja_id: Number(granja_id) },
     data: dataToUpdate,
   });
 };
 
-export const deleteMuertoPreDestete = async (id) => {
-  const muertoPreDestete = await prisma.muertos_PreDestete.findUnique({
-    where: { id: Number(id) },
-  });
-  if (!muertoPreDestete) {
-    throw new Error("Muerto pre-destete not found.");
+export const deleteMuertoPreDestete = async (id, granja_id) => {
+  const muertoPreDestete = await validateMuertoPreDesteteExist(id, granja_id);
+
+  const cerda = await validateCerdaExist(muertoPreDestete.cerda_id, granja_id);
+
+  if (cerda.destetes.length > 0) {
+    const ultimoDestete = cerda.destetes[0];
+    if (muertoPreDestete.fecha > ultimoDestete.fecha) {
+      throw new AppError("MUERTO_PRE_DESTETE_CANNOT_DELETE_AFTER_DESTETE", 400);
+    }
   }
 
-  const destete = await prisma.destete.findFirst({
-    where: {
-      cerda_id: muertoPreDestete.cerda_id,
-    },
-  });
-
-  if (destete.fecha >= muertoPreDestete.fecha) {
-    throw new Error(
-      "Cannot delete muerto pre-destete record because the cerda has already been destete after this date."
-    );
-  }
-
-  return await prisma.muertos_PreDestete.delete({
-    where: { id },
+  return await prisma.muerto_PreDestete.delete({
+    where: { id: id, granja_id: granja_id },
   });
 };

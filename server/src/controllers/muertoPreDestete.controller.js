@@ -1,11 +1,19 @@
 import * as service from "../services/muertoPreDestete.service.js";
+import { successResponse } from "../utils/response.js";
+
 export const createMuertoPreDestete = async (req, res, next) => {
   try {
-    const muertoPreDestete = await service.createMuertoPreDestete(req.body);
-    res.status(201).json({
-      message: "Muerto pre destete created successfully",
-      muertoPreDestete,
-    });
+    const muertoPreDestete = await service.createMuertoPreDestete(
+      req.body,
+      Number(req.user.granja_id)
+    );
+    successResponse(
+      req,
+      res,
+      201,
+      "MUERTO_PRE_DESTETE_CREATED",
+      muertoPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -13,36 +21,51 @@ export const createMuertoPreDestete = async (req, res, next) => {
 
 export const listMuertoPreDestete = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const muertosPreDestete = await service.listMuertoPreDestete(granja_id);
-    res.status(200).json(muertosPreDestete);
+    const muertosPreDestete = await service.listMuertoPreDestete(
+      Number(req.user.granja_id)
+    );
+    successResponse(
+      req,
+      res,
+      200,
+      "MUERTO_PRE_DESTETE_LISTED",
+      muertosPreDestete
+    );
   } catch (error) {
     next(error);
   }
 };
 export const getMuertoPreDesteteById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const muertoPreDestete = await service.getMuertoPreDesteteById(id);
-    if (!muertoPreDestete) {
-      return res.status(404).json({ error: "Muerto pre destete not found." });
-    }
-    return res.status(200).json(muertoPreDestete);
+    const muertoPreDestete = await service.getMuertoPreDesteteById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(
+      req,
+      res,
+      200,
+      "MUERTO_PRE_DESTETE_FETCHED",
+      muertoPreDestete
+    );
   } catch (error) {
     next(error);
   }
 };
 export const updateMuertoPreDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
     const updatedMuertoPreDestete = await service.updateMuertoPreDestete(
-      id,
+      Number(req.params.id),
+      Number(req.user.granja_id),
       req.body
     );
-    res.status(201).json({
-      message: "Muerto pre destete updated successfully",
-      muertoPreDestete: updatedMuertoPreDestete,
-    });
+    successResponse(
+      req,
+      res,
+      200,
+      "MUERTO_PRE_DESTETE_UPDATED",
+      updatedMuertoPreDestete
+    );
   } catch (error) {
     next(error);
   }
@@ -50,12 +73,17 @@ export const updateMuertoPreDestete = async (req, res, next) => {
 
 export const deleteMuertoPreDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const deletedMuertoPreDestete = await service.deleteMuertoPreDestete(id);
-    res.status(200).json({
-      message: "Muerto pre destete deleted successfully",
-      deletedMuertoPreDestete,
-    });
+    const deletedMuertoPreDestete = await service.deleteMuertoPreDestete(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(
+      req,
+      res,
+      200,
+      "MUERTO_PRE_DESTETE_DELETED",
+      deletedMuertoPreDestete
+    );
   } catch (error) {
     next(error);
   }

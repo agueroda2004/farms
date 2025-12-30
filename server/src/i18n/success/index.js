@@ -11,6 +11,7 @@ import { vacunaSuccessMessages } from "./vacunaSuccessMessages.js";
 import { parideraSuccessMessages } from "./parideraSuccessMessages.js";
 import { partoSuccessMessages } from "./partoSucccesMessages.js";
 import { enfermedadPreDesteteSuccessMessages } from "./enfermedadPreDesteteSuccessMessages.js";
+import { muertoPreDesteteSuccessMessages } from "./muertoPreDesteteSuccessMessages.js";
 
 export const successMessages = {
   es: {
@@ -27,6 +28,7 @@ export const successMessages = {
     ...parideraSuccessMessages.es,
     ...partoSuccessMessages.es,
     ...enfermedadPreDesteteSuccessMessages.es,
+    ...muertoPreDesteteSuccessMessages.es,
   },
   en: {
     ...jaulaSuccessMessages.en,
@@ -42,5 +44,6 @@ export const successMessages = {
     ...parideraSuccessMessages.en,
     ...partoSuccessMessages.en,
     ...enfermedadPreDesteteSuccessMessages.en,
+    ...muertoPreDesteteSuccessMessages.en,
   },
 };
