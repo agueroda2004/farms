@@ -1,11 +1,7 @@
 import prisma from "../prismaClient.js";
 import { AppError } from "../errors/appError.js";
 
-const validateCerdaExist = async (
-  cerda_id,
-  granja_id,
-  withExtensions = false
-) => {
+const validateCerdaExist = async (cerda_id, granja_id) => {
   const cerda = await prisma.cerda.findFirst({
     where: {
       id: cerda_id,
@@ -17,12 +13,10 @@ const validateCerdaExist = async (
         take: 1,
         orderBy: { fecha: "desc" },
       },
-      destetes: withExtensions
-        ? {
-            take: 1,
-            orderBy: { fecha: "desc" },
-          }
-        : undefined,
+      destetes: {
+        take: 1,
+        orderBy: { fecha: "desc" },
+      },
     },
   });
   if (!cerda) {
@@ -45,7 +39,14 @@ const validateDateMuerto = (fechaMuerte, ultimoParto) => {
   fechaParto.setHours(0, 0, 0, 0);
   fechaMuerte.setHours(0, 0, 0, 0);
   if (fechaMuerte < fechaParto) {
-    throw new AppError("MUERTO_PRE_DESTETE_DATE_INVALID", 400);
+    throw new AppError("MUERTO_PRE_DESTETE_DATE_BEFORE_PARTO", 400);
+  }
+  if (ultimoDestete) {
+    const fechaDestete = new Date(ultimoDestete.fecha);
+    fechaDestete.setHours(0, 0, 0, 0);
+    if (fechaMuerte > fechaDestete) {
+      throw new AppError("MUERTO_PRE_DESTETE_DATE_AFTER_DESTETE", 400);
+    }
   }
 };
 
@@ -103,7 +104,7 @@ export const createMuertoPreDestete = async (data, granja_id) => {
   } = data;
 
   const cerda = await validateCerdaExist(cerda_id, granja_id);
-  validateDateMuerto(fecha, cerda.partos[0]);
+  validateDateMuerto(fecha, cerda.partos[0], cerda.destetes[0] || null);
   await validateOperarioExist(operario_id, granja_id);
   await validateEnfermedadPreDesteteExist(enfermedad_id, granja_id);
 

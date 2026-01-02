@@ -1,11 +1,13 @@
 import * as service from "../services/adopcion.service.js";
+import { successResponse } from "../utils/response.js";
 
 export const createAdopcion = async (req, res, next) => {
   try {
-    const adopcion = await service.createAdopcion(req.body);
-    res
-      .status(201)
-      .json({ message: "Adopcion created successfully", adopcion });
+    const adopcion = await service.createAdopcion(
+      req.body,
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 201, "ADOPCION_CREATED", adopcion);
   } catch (error) {
     next(error);
   }
@@ -13,9 +15,8 @@ export const createAdopcion = async (req, res, next) => {
 
 export const listAdopciones = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const adopciones = await service.listAdopciones(Number(granja_id));
-    res.status(200).json(adopciones);
+    const adopciones = await service.listAdopciones(Number(req.user.granja_id));
+    successResponse(res, req, 200, "ADOPCIONES_LISTED", adopciones);
   } catch (error) {
     next(error);
   }
@@ -23,12 +24,12 @@ export const listAdopciones = async (req, res, next) => {
 
 export const getAdopcionById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const adopcion = await service.getAdopcionById(Number(id));
-    if (!adopcion) {
-      return res.status(404).json({ error: "Adopcion not found." });
-    }
-    res.status(200).json(adopcion);
+    const adopcion = await service.getAdopcionById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+
+    successResponse(res, req, 200, "ADOPCION_FETCHED", adopcion);
   } catch (error) {
     next(error);
   }
@@ -36,12 +37,12 @@ export const getAdopcionById = async (req, res, next) => {
 
 export const updateAdopcion = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    const adopcion = await service.updateAdopcion(Number(id), req.body);
-    res
-      .status(201)
-      .json({ message: "Adopcion updated successfully", adopcion });
+    const adopcion = await service.updateAdopcion(
+      Number(req.params.id),
+      Number(req.user.granja_id),
+      req.body
+    );
+    successResponse(res, req, 200, "ADOPCION_UPDATED", adopcion);
   } catch (error) {
     next(error);
   }
@@ -49,11 +50,11 @@ export const updateAdopcion = async (req, res, next) => {
 
 export const deleteAdopcion = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const deleteAdopcion = await service.deleteAdopcion(Number(id));
-    res
-      .status(201)
-      .json({ message: "Adopcion deleted successfully", deleteAdopcion });
+    const deleteAdopcion = await service.deleteAdopcion(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 200, "ADOPCION_DELETED", deleteAdopcion);
   } catch (error) {
     next(error);
   }
