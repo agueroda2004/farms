@@ -4,7 +4,7 @@ import { AppError } from "../errors/appError.js";
 export const createAdopcion = async (data, granja_id) => {
   const { fecha, cantidad, peso, cerda_id } = data;
 
-  const cerda = await validateCerdaExist(cerda_id, granja_id, true);
+  const cerda = await validateCerdaExist(cerda_id, granja_id);
   validateDateAdopcion(fecha, cerda.partos[0], cerda.destetes[0] || null);
 
   const adopcion = await prisma.adopcion.create({

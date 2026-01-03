@@ -1,11 +1,13 @@
 import * as service from "../services/donacion.service.js";
+import { successResponse } from "../utils/response.js";
 
 export const createDonacion = async (req, res, next) => {
   try {
-    const donacion = await service.createDonacion(req.body);
-    res
-      .status(201)
-      .json({ message: "Donacion created successfully", donacion });
+    const donacion = await service.createDonacion(
+      req.body,
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 201, "DONACION_CREATED", donacion);
   } catch (error) {
     next(error);
   }
@@ -13,9 +15,8 @@ export const createDonacion = async (req, res, next) => {
 
 export const listDonaciones = async (req, res, next) => {
   try {
-    const { granja_id } = req.params;
-    const donaciones = await service.listDonaciones(Number(granja_id));
-    res.status(200).json(donaciones);
+    const donaciones = await service.listDonaciones(Number(req.user.granja_id));
+    successResponse(res, req, 200, "DONACION_LISTED", donaciones);
   } catch (error) {
     next(error);
   }
@@ -23,12 +24,12 @@ export const listDonaciones = async (req, res, next) => {
 
 export const getDonacionById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const donacion = await service.getDonacionById(Number(id));
-    if (!donacion) {
-      return res.status(404).json({ error: "Donacion not found." });
-    }
-    res.status(200).json(donacion);
+    const donacion = await service.getDonacionById(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+
+    successResponse(res, req, 200, "DONACION_FETCHED", donacion);
   } catch (error) {
     next(error);
   }
@@ -36,12 +37,12 @@ export const getDonacionById = async (req, res, next) => {
 
 export const updateDonacion = async (req, res, next) => {
   try {
-    const { id } = req.params;
-
-    const donacion = await service.updateDonacion(Number(id), req.body);
-    res
-      .status(201)
-      .json({ message: "Donacion updated successfully", donacion });
+    const donacion = await service.updateDonacion(
+      Number(req.params.id),
+      Number(req.user.granja_id),
+      req.body
+    );
+    successResponse(res, req, 201, "DONACION_UPDATED", donacion);
   } catch (error) {
     next(error);
   }
@@ -49,11 +50,11 @@ export const updateDonacion = async (req, res, next) => {
 
 export const deleteDonacion = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const deleteDonacion = await service.deleteDonacion(Number(id));
-    res
-      .status(201)
-      .json({ message: "Donacion deleted successfully", deleteDonacion });
+    const deleteDonacion = await service.deleteDonacion(
+      Number(req.params.id),
+      Number(req.user.granja_id)
+    );
+    successResponse(res, req, 201, "DONACION_DELETED", deleteDonacion);
   } catch (error) {
     next(error);
   }

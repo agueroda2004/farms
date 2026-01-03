@@ -11,6 +11,7 @@ import { parideraErrorMessages } from "../errors/parideraErrorMessages.js";
 import { enfermedadPreDesteteErrorMessages } from "../errors/enfermedadPreDesteteErrorMessages.js";
 import { muertoPreDesteteErrorMessages } from "../errors/muertoPreDesteteErrorMessages.js";
 import { adopcionErrorMessages } from "../errors/adopcionErrorMessages.js";
+import { donacionErrorMessages } from "../errors/donacionErrorMessages.js";
 
 export const errorMessages = {
   es: {
@@ -27,6 +28,7 @@ export const errorMessages = {
     ...enfermedadPreDesteteErrorMessages.es,
     ...muertoPreDesteteErrorMessages.es,
     ...adopcionErrorMessages.es,
+    ...donacionErrorMessages.es,
   },
   en: {
     ...jaulaErrorMessages.en,
@@ -42,5 +44,6 @@ export const errorMessages = {
     ...enfermedadPreDesteteErrorMessages.en,
     ...muertoPreDesteteErrorMessages.en,
     ...adopcionErrorMessages.en,
+    ...donacionErrorMessages.en,
   },
 };

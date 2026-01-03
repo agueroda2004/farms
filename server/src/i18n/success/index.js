@@ -13,6 +13,7 @@ import { partoSuccessMessages } from "./partoSucccesMessages.js";
 import { enfermedadPreDesteteSuccessMessages } from "./enfermedadPreDesteteSuccessMessages.js";
 import { muertoPreDesteteSuccessMessages } from "./muertoPreDesteteSuccessMessages.js";
 import { adopcionSuccessMessages } from "./adopcionSuccessMessages.js";
+import { donacionSuccessMessages } from "./donacionSuccessMessages.js";
 
 export const successMessages = {
   es: {
@@ -31,6 +32,7 @@ export const successMessages = {
     ...enfermedadPreDesteteSuccessMessages.es,
     ...muertoPreDesteteSuccessMessages.es,
     ...adopcionSuccessMessages.es,
+    ...donacionSuccessMessages.es,
   },
   en: {
     ...jaulaSuccessMessages.en,
@@ -48,5 +50,6 @@ export const successMessages = {
     ...enfermedadPreDesteteSuccessMessages.en,
     ...muertoPreDesteteSuccessMessages.en,
     ...adopcionSuccessMessages.en,
+    ...donacionSuccessMessages.en,
   },
 };
