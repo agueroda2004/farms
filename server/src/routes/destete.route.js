@@ -5,41 +5,18 @@ import {
   validateUpdateDestete,
 } from "../validators/desteteValidator.js";
 import { validateIdParam } from "../validators/globalValidator.js";
-import { checkGranjaAccess } from "../auth/middlewares/authMiddleware.js";
 
 const router = express.Router();
 
-router.post(
-  "/",
-  checkGranjaAccess,
-  validateCreateDestete,
-  controller.createDestete
-);
-router.get(
-  "/all/:granja_id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.listDestetes
-);
+router.post("/", validateCreateDestete, controller.createDestete);
+router.get("/", controller.listDestetes);
 
-// ? Se debe mandar el granja_id para validar el acceso
-router.get(
-  "/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.getDesteteById
-);
+router.get("/:id", validateIdParam, controller.getDesteteById);
 router.post(
   "/update/:id",
   validateIdParam,
-  checkGranjaAccess,
   validateUpdateDestete,
   controller.updateDestete
 );
-router.post(
-  "/delete/:id",
-  validateIdParam,
-  checkGranjaAccess,
-  controller.deleteDestete
-);
+router.post("/delete/:id", validateIdParam, controller.deleteDestete);
 export default router;

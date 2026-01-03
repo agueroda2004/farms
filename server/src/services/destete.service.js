@@ -1,138 +1,12 @@
 import prisma from "../prismaClient.js";
+import { AppError } from "../errors/appError.js";
 
-export const createDestete = async (data) => {
-  const { fecha, cantidad, peso, parcial, cerda_id, granja_id } = data;
+export const createDestete = async (data, granja_id) => {
+  const { fecha, cantidad, peso, parcial, cerda_id } = data;
 
-  const cerda = await prisma.cerda.findFirst({
-    where: { id: cerda_id, granja_id },
-    include: {
-      partos: {
-        take: 1,
-        orderBy: { fecha: "desc" },
-        include: {
-          muertos: {
-            where: {
-              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          adopciones: {
-            where: {
-              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          donaciones: {
-            where: {
-              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          destetes: {
-            where: { parcial: true },
-            orderBy: { fecha: "desc" },
-          },
-        },
-      },
-    },
-  });
-
-  if (!cerda) {
-    throw new Error("Cerda not found.");
-  }
-  if (cerda.partos.length === 0) {
-    throw new Error("Partos not found for the specified cerda.");
-  }
-
-  if (cerda.condicion !== "lactando") {
-    throw new Error(
-      `Cerda condition must be 'lactando' to register a destete. Current condition: ${cerda.condicion}`
-    );
-  }
-
-  const ultimoParto = cerda.partos[0];
-  const fechaDesteteValidacion = new Date(fecha);
-  const fechaPartoValidacion = new Date(ultimoParto.fecha);
-  const fechaMuertosValidacion = ultimoParto.muertos.length
-    ? new Date(ultimoParto.muertos[0].fecha)
-    : null;
-  const fechaAdopcionesValidacion = ultimoParto.adopciones.length
-    ? new Date(ultimoParto.adopciones[0].fecha)
-    : null;
-  const fechaDonacionesValidacion = ultimoParto.donaciones.length
-    ? new Date(ultimoParto.donaciones[0].fecha)
-    : null;
-  const fechaDestetesParcialesValidacion = ultimoParto.destetes.length
-    ? new Date(ultimoParto.destetes[0].fecha)
-    : null;
-
-  if (fechaDesteteValidacion < fechaPartoValidacion) {
-    throw new Error(
-      "The destete date cannot be earlier than the date of the last parto."
-    );
-  }
-  if (
-    fechaMuertosValidacion &&
-    fechaMuertosValidacion < fechaDesteteValidacion
-  ) {
-    throw new Error(
-      "The destete date cannot be earlier than the date of the last recorded muerto."
-    );
-  }
-  if (
-    fechaAdopcionesValidacion &&
-    fechaAdopcionesValidacion < fechaDesteteValidacion
-  ) {
-    throw new Error(
-      "The destete date cannot be earlier than the date of the last recorded adopcion."
-    );
-  }
-  if (
-    fechaDonacionesValidacion &&
-    fechaDonacionesValidacion < fechaDesteteValidacion
-  ) {
-    throw new Error(
-      "The destete date cannot be earlier than the date of the last recorded donacion."
-    );
-  }
-  if (
-    fechaDestetesParcialesValidacion &&
-    fechaDestetesParcialesValidacion < fechaDesteteValidacion
-  ) {
-    throw new Error(
-      "The destete date cannot be earlier than the date of the last recorded parcial destete."
-    );
-  }
-
-  const totalMuertos = ultimoParto.muertos.reduce(
-    (sum, m) => sum + m.cantidad,
-    0
-  );
-  const totalAdopciones = ultimoParto.adopciones.reduce(
-    (sum, a) => sum + a.cantidad,
-    0
-  );
-  const totalDonaciones = ultimoParto.donaciones.reduce(
-    (sum, d) => sum + d.cantidad,
-    0
-  );
-
-  const lechonesEsperados =
-    ultimoParto.nacidos_vivos -
-    totalDonaciones -
-    totalMuertos +
-    totalAdopciones;
-
-  if (cantidad > lechonesEsperados) {
-    throw new Error(
-      `The quantity of destete (${cantidad}) exceeds the expected number of piglets (${lechonesEsperados}).`
-    );
-  }
-  if (cantidad < lechonesEsperados) {
-    throw new Error(
-      `The quantity of destete (${cantidad}) is less than the expected number of piglets (${lechonesEsperados}).`
-    );
-  }
+  const cerda = await validateCerdaExist(cerda_id, granja_id);
+  validateDateDestete(cerda.partos[0], fecha);
+  validateCantidadCerdos(cerda.partos[0], cantidad);
 
   const desteteData = {
     fecha,
@@ -171,171 +45,30 @@ export const listDestetes = async (granja_id) => {
   return destetes;
 };
 
-export const getDesteteById = async (id) => {
+export const getDesteteById = async (id, granja_id) => {
   const destete = await prisma.destete.findFirst({
-    where: { id },
+    where: { id, granja_id },
   });
   return destete;
 };
 
-// !
-export const updateDestete = async (id, data) => {
+export const updateDestete = async (id, granja_id, data) => {
   const { fecha, cantidad, peso, parcial } = data;
   const dataToUpdate = {};
 
-  const destete = await prisma.destete.findFirst({
-    where: { id },
-  });
-  if (!destete) {
-    throw new Error("Destete not found.");
-  }
-  const cerda = await prisma.cerda.findFirst({
-    where: { id: cerda_id, granja_id, activo: true },
-    include: {
-      servicios: {
-        take: 1,
-        orderBy: { fecha: "desc" },
-        include: { montas: { take: 1, orderBy: { fecha: "desc" } } },
-      },
-      partos: {
-        take: 1,
-        orderBy: { fecha: "desc" },
-        include: {
-          muertos: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          adopciones: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          donaciones: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          destetes: {
-            where: { parcial: true },
-            orderBy: { fecha: "desc" },
-          },
-        },
-      },
-    },
-  });
-  if (!cerda) {
-    throw new Error("Cerda not found.");
-  }
-
-  const ultimoParto = cerda.partos[0];
+  const destete = await validateDesteteExist(id, granja_id);
+  const cerda = await validateCerdaExist(destete.cerda_id, granja_id);
 
   if (fecha !== undefined) {
-    const fechaDesteteValidacion = new Date(fecha);
-    const fechaPartoValidacion = new Date(ultimoParto.fecha);
-    const fechaMuertosValidacion = ultimoParto.muertos.length
-      ? new Date(ultimoParto.muertos[0].fecha)
-      : null;
-    const fechaAdopcionesValidacion = ultimoParto.adopciones.length
-      ? new Date(ultimoParto.adopciones[0].fecha)
-      : null;
-    const fechaDonacionesValidacion = ultimoParto.donaciones.length
-      ? new Date(ultimoParto.donaciones[0].fecha)
-      : null;
-    const fechaDestetesParcialesValidacion = ultimoParto.destetes.length
-      ? new Date(ultimoParto.destetes[0].fecha)
-      : null;
-    const fechaMontaValidacion = cerda.servicios.length
-      ? new Date(cerda.servicios[0].montas[0].fecha)
-      : null;
-
-    if (fechaDesteteValidacion < fechaPartoValidacion) {
-      throw new Error(
-        "The destete date cannot be earlier than the date of the last parto."
-      );
-    }
-    if (
-      fechaMuertosValidacion &&
-      fechaMuertosValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "The destete date cannot be earlier than the date of the last recorded muerto."
-      );
-    }
-    if (
-      fechaAdopcionesValidacion &&
-      fechaAdopcionesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "The destete date cannot be earlier than the date of the last recorded adopcion."
-      );
-    }
-    if (
-      fechaDonacionesValidacion &&
-      fechaDonacionesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "The destete date cannot be earlier than the date of the last recorded donacion."
-      );
-    }
-    if (
-      fechaDestetesParcialesValidacion &&
-      fechaDestetesParcialesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "The destete date cannot be earlier than the date of the last recorded parcial destete."
-      );
-    }
-    if (fechaMontaValidacion && fechaMontaValidacion < fechaDesteteValidacion) {
-      throw new Error("The destete date cannot be later than the monta date.");
-    }
+    validateDateDestete(cerda.partos[0], fecha);
     dataToUpdate.fecha = fecha;
   }
 
   if (cantidad !== undefined) {
-    const totalMuertos = ultimoParto.muertos.reduce(
-      (sum, m) => sum + m.cantidad,
-      0
-    );
-    const totalAdopciones = ultimoParto.adopciones.reduce(
-      (sum, a) => sum + a.cantidad,
-      0
-    );
-    const totalDonaciones = ultimoParto.donaciones.reduce(
-      (sum, d) => sum + d.cantidad,
-      0
-    );
-
-    const lechonesEsperados =
-      ultimoParto.nacidos_vivos -
-      totalDonaciones -
-      totalMuertos +
-      totalAdopciones;
-
-    if (cantidad > lechonesEsperados) {
-      throw new Error(
-        `The quantity of destete (${cantidad}) exceeds the expected number of piglets (${lechonesEsperados}).`
-      );
-    }
-    if (cantidad < lechonesEsperados) {
-      throw new Error(
-        `The quantity of destete (${cantidad}) is less than the expected number of piglets (${lechonesEsperados}).`
-      );
-    }
+    validateCantidadCerdos(cerda.partos[0], cantidad);
     dataToUpdate.cantidad = cantidad;
   }
+
   if (peso !== undefined) dataToUpdate.peso = peso;
 
   if (parcial !== undefined) {
@@ -378,65 +111,12 @@ export const updateDestete = async (id, data) => {
   return updatedDestete;
 };
 
-export const deleteDestete = async (id) => {
-  const destete = await prisma.destete.delete({
-    where: { id },
-  });
-  if (!destete) {
-    throw new Error("Destete not found.");
-  }
-  const cerda = await prisma.cerda.findFirst({
-    where: { id: cerda_id, granja_id, activo: true },
-    include: {
-      servicios: {
-        take: 1,
-        orderBy: { fecha: "desc" },
-        include: { montas: { take: 1, orderBy: { fecha: "desc" } } },
-      },
-      partos: {
-        take: 1,
-        orderBy: { fecha: "desc" },
-        include: {
-          muertos: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          adopciones: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          donaciones: {
-            where: {
-              fecha: {
-                gte: new Date("1900-01-01"),
-                lte: new Date(destete.fecha),
-              },
-            },
-            orderBy: { fecha: "desc" },
-          },
-          destetes: {
-            where: { parcial: true },
-            orderBy: { fecha: "desc" },
-          },
-        },
-      },
-    },
-  });
-  if (!cerda) {
-    throw new Error("Cerda not found.");
-  }
+export const deleteDestete = async (id, granja_id) => {
+  const destete = await validateDesteteExist(id, granja_id);
+  const cerda = await validateCerdaExist(destete.cerda_id, granja_id);
 
   const ultimoParto = cerda.partos[0];
+
   const fechaDesteteValidacion = new Date(fecha);
 
   if (destete.parcial === false) {
@@ -444,9 +124,7 @@ export const deleteDestete = async (id) => {
       ? new Date(cerda.servicios[0].montas[0].fecha)
       : null;
     if (fechaMontaValidacion && fechaMontaValidacion > fechaDesteteValidacion) {
-      throw new Error(
-        "Cannot delete destete because there is a monta recorded after the destete date."
-      );
+      throw new AppError("CANNOT_DELETE_DESTETE_BEFORE_MATING", 400);
     }
     const [deletedDestete, ..._] = await prisma.$transaction([
       prisma.destete.delete({ where: { id } }),
@@ -461,51 +139,7 @@ export const deleteDestete = async (id) => {
     return deletedDestete;
   }
   if (destete.parcial === true) {
-    const fechaMuertosValidacion = ultimoParto.muertos.length
-      ? new Date(ultimoParto.muertos[0].fecha)
-      : null;
-    const fechaAdopcionesValidacion = ultimoParto.adopciones.length
-      ? new Date(ultimoParto.adopciones[0].fecha)
-      : null;
-    const fechaDonacionesValidacion = ultimoParto.donaciones.length
-      ? new Date(ultimoParto.donaciones[0].fecha)
-      : null;
-    const fechaDestetesParcialesValidacion = ultimoParto.destetes.length
-      ? new Date(ultimoParto.destetes[0].fecha)
-      : null;
-
-    if (
-      fechaMuertosValidacion &&
-      fechaMuertosValidacion > fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "Cannot delete destete because there is a muerto recorded after the destete date."
-      );
-    }
-    if (
-      fechaAdopcionesValidacion &&
-      fechaAdopcionesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "Cannot delete destete because there is an adopcion recorded after the destete date."
-      );
-    }
-    if (
-      fechaDonacionesValidacion &&
-      fechaDonacionesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "Cannot delete destete because there is a donacion recorded after the destete date."
-      );
-    }
-    if (
-      fechaDestetesParcialesValidacion &&
-      fechaDestetesParcialesValidacion < fechaDesteteValidacion
-    ) {
-      throw new Error(
-        "Cannot delete destete because there is a parcial destete recorded after the destete date."
-      );
-    }
+    validateDeleteDate(ultimoParto, destete.fecha);
     const deletedDestete = await prisma.$transaction([
       prisma.destete.delete({ where: { id } }),
       prisma.cerda.update({
@@ -514,5 +148,173 @@ export const deleteDestete = async (id) => {
       }),
     ]);
     return deletedDestete;
+  }
+};
+
+const validateCerdaExist = async (cerda_id, granja_id) => {
+  const cerda = await prisma.cerda.findFirst({
+    where: { id: cerda_id, granja_id },
+    include: {
+      partos: {
+        take: 1,
+        orderBy: { fecha: "desc" },
+        include: {
+          muertos: {
+            where: {
+              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
+            },
+            orderBy: { fecha: "desc" },
+          },
+          adopciones: {
+            where: {
+              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
+            },
+            orderBy: { fecha: "desc" },
+          },
+          donaciones: {
+            where: {
+              fecha: { gte: new Date("1900-01-01"), lte: new Date(fecha) },
+            },
+            orderBy: { fecha: "desc" },
+          },
+          destetes: {
+            where: { parcial: true },
+            orderBy: { fecha: "desc" },
+          },
+        },
+      },
+    },
+  });
+  if (!cerda) {
+    throw new AppError("CERDA_NOT_FOUND", 404);
+  }
+  if (cerda.partos.length === 0) {
+    throw new AppError("CERDA_HAS_NOT_PARTOS", 400);
+  }
+  if (cerda.paridera_id === null) {
+    throw new AppError("CERDA_NOT_ASSIGNED_PARIDERA", 400);
+  }
+  if (cerda.condicion !== "lactando") {
+    throw new AppError("CERDA_NOT_LACTANDO", 400);
+  }
+  return cerda;
+};
+
+const validateDateDestete = (ultimoParto, fecha) => {
+  const fechaDesteteValidacion = new Date(fecha);
+  const fechaPartoValidacion = new Date(ultimoParto.fecha);
+  const fechaMuertosValidacion = ultimoParto.muertos.length
+    ? new Date(ultimoParto.muertos[0].fecha)
+    : null;
+  const fechaAdopcionesValidacion = ultimoParto.adopciones.length
+    ? new Date(ultimoParto.adopciones[0].fecha)
+    : null;
+  const fechaDonacionesValidacion = ultimoParto.donaciones.length
+    ? new Date(ultimoParto.donaciones[0].fecha)
+    : null;
+  const fechaDestetesParcialesValidacion = ultimoParto.destetes.length
+    ? new Date(ultimoParto.destetes[0].fecha)
+    : null;
+
+  if (fechaDesteteValidacion < fechaPartoValidacion) {
+    throw new AppError("CANNOT_DESTETE_BEDORE_PARTO", 400);
+  }
+  if (
+    fechaMuertosValidacion &&
+    fechaMuertosValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DESTETE_BEFORE_LAST_MUERTE_PRE_DESTETE", 400);
+  }
+
+  if (
+    fechaAdopcionesValidacion &&
+    fechaAdopcionesValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DESTETE_BEFORE_LAST_ADOPCION", 400);
+  }
+  if (
+    fechaDonacionesValidacion &&
+    fechaDonacionesValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DESTETE_BEFORE_LAST_DONACION", 400);
+  }
+  if (
+    fechaDestetesParcialesValidacion &&
+    fechaDestetesParcialesValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DESTETE_BEFORE_LAST_DESTETE_PARCIAL", 400);
+  }
+};
+
+const validateCantidadCerdos = (ultimoParto, cantidad) => {
+  const totalMuertos = ultimoParto.muertos.reduce(
+    (sum, m) => sum + m.cantidad,
+    0
+  );
+  const totalAdopciones = ultimoParto.adopciones.reduce(
+    (sum, a) => sum + a.cantidad,
+    0
+  );
+  const totalDonaciones = ultimoParto.donaciones.reduce(
+    (sum, d) => sum + d.cantidad,
+    0
+  );
+  const lechonesEsperados =
+    ultimoParto.nacidos_vivos -
+    totalDonaciones -
+    totalMuertos +
+    totalAdopciones;
+
+  if (cantidad > lechonesEsperados) {
+    throw new AppError("QUANTITY_EXCEEDS_LITTER_SIZE", 400);
+  }
+
+  if (cantidad < lechonesEsperados) {
+    throw new AppError("QUANTITY_LESS_THAN_LITTER_SIZE", 400);
+  }
+};
+
+const validateDesteteExist = async (id, granja_id) => {
+  const destete = await prisma.destete.findFirst({
+    where: { id, granja_id },
+  });
+  if (!destete) {
+    throw new AppError("DESTETE_NOT_FOUND", 404);
+  }
+  return destete;
+};
+
+const validateDeleteDate = (ultimoParto, fechaDestete) => {
+  const fechaDesteteValidacion = new Date(fechaDestete);
+  const fechaMuertosValidacion = ultimoParto.muertos.length
+    ? new Date(ultimoParto.muertos[0].fecha)
+    : null;
+  const fechaAdopcionesValidacion = ultimoParto.adopciones.length
+    ? new Date(ultimoParto.adopciones[0].fecha)
+    : null;
+  const fechaDonacionesValidacion = ultimoParto.donaciones.length
+    ? new Date(ultimoParto.donaciones[0].fecha)
+    : null;
+  const fechaDestetesParcialesValidacion = ultimoParto.destetes.length
+    ? new Date(ultimoParto.destetes[0].fecha)
+    : null;
+
+  if (
+    fechaMuertosValidacion &&
+    fechaMuertosValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DELETE_DESTETE_AFTER_MUERTE_PRE_DESTETE", 400);
+  }
+  if (
+    fechaAdopcionesValidacion &&
+    fechaAdopcionesValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DELETE_DESTETE_AFTER_ADOPTION", 400);
+  }
+  if (
+    fechaDonacionesValidacion &&
+    fechaDonacionesValidacion > fechaDesteteValidacion
+  ) {
+    throw new AppError("CANNOT_DELETE_DESTETE_AFTER_DONATION", 400);
   }
 };

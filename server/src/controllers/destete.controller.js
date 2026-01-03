@@ -1,9 +1,10 @@
 import * as service from "../services/destete.service.js";
+import { successResponse } from "../utils/response.js";
 
 export const createDestete = async (req, res, next) => {
   try {
-    const destete = await service.createDestete(req.body);
-    res.status(201).json({ message: "Destete created successfully", destete });
+    const destete = await service.createDestete(req.body, Number(req.user.id));
+    successResponse(res, req, 201, "DESTETE_CREATED", destete);
   } catch (error) {
     next(error);
   }
@@ -11,8 +12,8 @@ export const createDestete = async (req, res, next) => {
 
 export const listDestetes = async (req, res, next) => {
   try {
-    const destetes = await service.listDestetes();
-    res.status(200).json({ destetes });
+    const destetes = await service.listDestetes(Number(req.user.id));
+    successResponse(res, req, 200, "DESTETES_LISTED", destetes);
   } catch (error) {
     next(error);
   }
@@ -20,12 +21,12 @@ export const listDestetes = async (req, res, next) => {
 
 export const getDesteteById = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const destete = await service.getDesteteById(Number(id));
-    if (!destete) {
-      return res.status(404).json({ error: "Destete not found." });
-    }
-    res.status(200).json({ destete });
+    const destete = await service.getDesteteById(
+      Number(req.params.id),
+      Number(req.user.id)
+    );
+
+    successResponse(res, req, 200, "DESTETE_RETRIEVED", destete);
   } catch (error) {
     next(error);
   }
@@ -33,12 +34,12 @@ export const getDesteteById = async (req, res, next) => {
 
 export const updateDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const updatedDestete = await service.updateDestete(Number(id), req.body);
-    res.status(201).json({
-      message: "Destete updated successfully",
-      destete: updatedDestete,
-    });
+    const updatedDestete = await service.updateDestete(
+      Number(req.params.id),
+      Number(req.user.id),
+      req.body
+    );
+    successResponse(res, req, 200, "DESTETE_UPDATED", updatedDestete);
   } catch (error) {
     next(error);
   }
@@ -46,12 +47,11 @@ export const updateDestete = async (req, res, next) => {
 
 export const deleteDestete = async (req, res, next) => {
   try {
-    const { id } = req.params;
-    const deletedDestete = await service.deleteDestete(Number(id));
-    res.status(201).json({
-      message: "Destete deleted successfully",
-      destete: deletedDestete,
-    });
+    const deletedDestete = await service.deleteDestete(
+      Number(req.params.id),
+      Number(req.user.id)
+    );
+    successResponse(res, req, 200, "DESTETE_DELETED", deletedDestete);
   } catch (error) {
     next(error);
   }
